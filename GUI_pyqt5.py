@@ -36,7 +36,7 @@ pg.setConfigOption('foreground', 'k')
 iraf.prcacheOff() 
 iraf.set(clobber="yes") 
 
-os.system("x-terminal-emulator -e 'indiserver -v indi_qhy_ccd indi_asi_ccd'") #Run IndiServer
+#os.system("x-terminal-emulator -e 'indiserver -v indi_qhy_ccd indi_asi_ccd'") #Run IndiServer
 
 #os.system('ds9 -geometry 636x360+447+87 &') #set up ds9 window
 
@@ -74,84 +74,84 @@ class motor_loop1(QtCore.QObject):
 			self.emit(QtCore.SIGNAL('CCOUNT_FOR'),add) 
 			QtGui.QApplication.processEvents()
 
-        def move_reverse(self):
+	def move_reverse(self):
 		stepper.set_direction(ccw)
-                self.moving_reverse = True
+		self.moving_reverse = True
 		i=0
 		add=0
-                while (self.moving_reverse == True):
-                        stepper.step()
+		while (self.moving_reverse == True):
+			stepper.step()
 			add+=1
 			self.emit(QtCore.SIGNAL('CCOUNT_REV'),add)
-                        QtGui.QApplication.processEvents()
+			QtGui.QApplication.processEvents()
 
 	def stop(self):
 		self.moving_forward = False
 		self.moving_reverse = False
 
 class motor_loop2(QtCore.QObject):
-        def __init__(self):
-                super(motor_loop2, self).__init__()
-                self.moving_forward = False
-                self.moving_reverse = False
+	def __init__(self):
+		super(motor_loop2, self).__init__()
+		self.moving_forward = False
+		self.moving_reverse = False
 
-        def move_forward(self):
-                stepper2.set_direction(cw)
-                self.moving_forward = True
+	def move_forward(self):
+		stepper2.set_direction(cw)
+		self.moving_forward = True
 		i=0
 		add=0
-                while (self.moving_forward == True):
-                        stepper2.step()
+		while (self.moving_forward == True):
+			stepper2.step()
 			add+=1
 			self.emit(QtCore.SIGNAL('ACOUNT1_FOR'),add)
-                        QtGui.QApplication.processEvents()
+			QtGui.QApplication.processEvents()
 
-        def move_reverse(self):
-                stepper2.set_direction(ccw)
-                self.moving_reverse = True
+	def move_reverse(self):
+		stepper2.set_direction(ccw)
+		self.moving_reverse = True
 		i=0
 		add=0
-                while (self.moving_reverse == True):
-                        stepper2.step()
+		while (self.moving_reverse == True):
+			stepper2.step()
 			add+=1
 			self.emit(QtCore.SIGNAL('ACOUNT1_REV'),add)
-                        QtGui.QApplication.processEvents()
+			QtGui.QApplication.processEvents()
 
-        def stop(self):
-                self.moving_forward = False
-                self.moving_reverse = False
+	def stop(self):
+		self.moving_forward = False
+		self.moving_reverse = False
 
 class motor_loop3(QtCore.QObject):
-        def __init__(self):
-                super(motor_loop3, self).__init__()
-                self.moving_forward = False
-                self.moving_reverse = False
+	def __init__(self):
+		super(motor_loop3, self).__init__()
+		self.moving_forward = False
+		self.moving_reverse = False
 
-        def move_forward(self):
-                stepper3.set_direction(cw)
-                self.moving_forward = True
+	def move_forward(self):
+		stepper3.set_direction(cw)
+		self.moving_forward = True
 		i=0
 		add=0
-                while (self.moving_forward == True):
-                        stepper3.step()
+		while (self.moving_forward == True):
+			stepper3.step()
 			add+=1
 			self.emit(QtCore.SIGNAL('ACOUNT2_FOR'),add)
-                        QtGui.QApplication.processEvents()
+			QtGui.QApplication.processEvents()
 
-        def move_reverse(self):
-                stepper3.set_direction(ccw)
-                self.moving_reverse = True
+	def move_reverse(self):
+		stepper3.set_direction(ccw)
+		self.moving_reverse = True
 		i=0
 		add=0
-                while (self.moving_reverse == True):
-                        stepper3.step()
+		while (self.moving_reverse == True):
+			stepper3.step()
 			add+=1
 			self.emit(QtCore.SIGNAL('ACOUNT2_REV'),add)
-                        QtGui.QApplication.processEvents()
+			QtGui.QApplication.processEvents()
 
-        def stop(self):
-                self.moving_forward = False
-                self.moving_reverse = False
+	def stop(self):
+		self.moving_forward = False
+		self.moving_reverse = False
 #===============================================================================================#
 #===============================================================================================#
 
@@ -180,17 +180,17 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI10.Ui_MainWindow):
 # Connect MainUiClass to threads =====
 #=====================================
 		self.threadclass=ThreadClass(self) #Client thread
-		self.threadclass.start()
+		#self.threadclass.start()
 
 		self.tempthread=TempThread(self.threadclass) #Temperature update thread
-		self.tempthread.start()
+		#self.tempthread.start()
 
 		
 		self.filterthread_startup=FilterThread_Startup(self.threadclass) #Filter indicator thread
-		self.filterthread_startup.start()
+		#self.filterthread_startup.start()
 
 		self.configthread=ConfigThread(self.threadclass) #Config thread
-		self.configthread.start()
+		#self.configthread.start()
 
 		#Stage move/watch threads: -- [Stage not available]
 		#self.moveStageThread=stage_thread()
@@ -201,20 +201,20 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI10.Ui_MainWindow):
 		#self.watchStageThread.start()
 
 		self.claudiusthread=Claudius() #Claudius (terminal) thread
-		self.claudiusthread.start()
+		#self.claudiusthread.start()
 
 		#Focus threads:
 		self.simulThread1 = thread1()
 		self.motor_loop1 = motor_loop1()
 		self.motor_loop1.moveToThread(self.simulThread1) # **** Not consistent ****
 
-     		self.simulThread2 = thread2()
-                self.motor_loop2 = motor_loop2()
-                self.motor_loop2.moveToThread(self.simulThread2)
+		self.simulThread2 = thread2()
+		self.motor_loop2 = motor_loop2()
+		self.motor_loop2.moveToThread(self.simulThread2)
 
-	        self.simulThread3 = thread3()
-                self.motor_loop3 = motor_loop3()
-                self.motor_loop3.moveToThread(self.simulThread3)
+		self.simulThread3 = thread3()
+		self.motor_loop3 = motor_loop3()
+		self.motor_loop3.moveToThread(self.simulThread3)
 
 #==========================
 # Terminal processes ======
@@ -281,7 +281,6 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI10.Ui_MainWindow):
 		self.sig7.threadclass.connect(self.time_start) #Start exposure updates (ie: remaining time and # exposures taken)
 		
 		self.connect(self.claudiusthread,QtCore.SIGNAL('LNK'),self.setClaudiuslnk) #Claudius link
-
 
 
 #=================================================
@@ -590,7 +589,7 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI10.Ui_MainWindow):
 	#Update number of exposures variable j:
 	def update_num(self):
 		global j
-		j=self.num_exp_spn.value(
+		j=self.num_exp_spn.value()
 #-----------------------** IN THE WORKS **------------------------------------------#
 	#Events when window is closed -- replace with a shutdown button?
 	def closeEvent(self,event):
@@ -606,7 +605,7 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI10.Ui_MainWindow):
 	def send_command(self):
 		command=str(self.claudius_command_lineEdit.text())
 		self.claudius_command_lineEdit.clear()
-		print ("<b>observer@claudius: </b>"+command)
+		print("<b>observer@claudius: </b>"+command)
 		self.logfile.write("<b>observer@claudius: </b>"+command+"\n")
 		#new
 		"""command_claudius=("ssh observer@claudius "+ command)
@@ -617,7 +616,7 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI10.Ui_MainWindow):
 		
 		self.claudiuslnk.sendline(command) 
 		self.claudiuslnk.prompt()
-		print self.claudiuslnk.before 
+		print(self.claudiuslnk.before) 
  
 		"""out, err=Popen(command,stdout=PIPE).communicate()
 		print (out)
@@ -1217,10 +1216,10 @@ class ThreadClass(QtCore.QThread):
 		print("Indi (before): "+ str(self.slot_dwheel[0].value))
 		self.main.logfile.write("Indi (before): "+ str(self.slot_dwheel[0].value)+"\n")
 		#time.sleep(1.5) #doesn't help
-		print slot
+		print(slot)
 		self.main.logfile.write(str(slot)+'\n')
 		self.slot_dwheel[0].value=slot+1
-		print ("Ours: "+ str(slot+1))
+		print("Ours: "+ str(slot+1))
 		self.main.logfile.write("Ours: "+ str(slot+1)+"\n")
 		self.indiclient.sendNewNumber(self.slot_dwheel)
 		print("Indi: "+ str(self.slot_dwheel[0].value))
@@ -1381,7 +1380,7 @@ class ThreadClass(QtCore.QThread):
 				os.system('xpaset -p ds9 regions load '+self.main.regionpath) #new
 				print("Image Saved:")
 				self.main.logfile.write("Image Saved:\n")
-				print self.complete_path
+				print(self.complete_path)
 				self.main.logfile.write(self.complete_path+'\n')
 
 
@@ -1394,16 +1393,16 @@ class ThreadClass(QtCore.QThread):
 				#update coords.txt
 				# if there is a guidebox drawn, get the centroid of that as starting coords.  If not, just use the center of the image.
 				if read_region(self.main.regionpath) != None:
-					print "There's a region!"
+					print("There's a region!")
 					[xcenter2, ycenter2] = imexcentroid(self.complete_path, self.main.regionpath)
 					
 				else:
 					#compute the center of the frame just taken
-					print "No region! "+str(read_region(self.main.regionpath))
+					print("No region! "+str(read_region(self.main.regionpath)))
 					hdulist1 = pyfits.open(self.complete_path)
 					scidata1 = hdulist1[0].data
 					[xcenter2, ycenter2] = [int(scidata1.shape[0]/2),int(scidata1.shape[1]/2)]
-				print xcenter2,ycenter2
+				print(xcenter2,ycenter2)
 				# close and reopen coordinate file so it overwrites (is there a better way to do this?)
 				self.main.coordsfile = open('/home/fhire/Desktop/GUI/Reference/coords.txt', 'w')
 				self.main.coordsfile.write(str(xcenter2)+' '+str(ycenter2))
@@ -1452,16 +1451,16 @@ class ThreadClass(QtCore.QThread):
 				#update coords.txt
 				# if there is a guidebox drawn, get the centroid of that as starting coords.  If not, just use the center of the image.
 				if read_region(self.main.regionpath) != None:
-					print "There's a region!"
+					print("There's a region!")
 					[xcenter2, ycenter2] = imexcentroid(self.complete_path, self.main.regionpath)
 					
 				else:
 					#compute the center of the frame just taken
-					print "No region! "+str(read_region(self.main.regionpath))
+					print("No region! "+str(read_region(self.main.regionpath)))
 					hdulist1 = pyfits.open(self.complete_path)
 					scidata1 = hdulist1[0].data
 					[xcenter2, ycenter2] = [int(scidata1.shape[0]/2),int(scidata1.shape[1]/2)]
-				print xcenter2,ycenter2
+				print(xcenter2,ycenter2)
 				# close and reopen coordinate file so it overwrites (is there a better way to do this?)
 				self.main.coordsfile = open('/home/fhire/Desktop/GUI/Reference/coords.txt', 'w')
 				self.main.coordsfile.write(str(xcenter2)+' '+str(ycenter2))
@@ -1584,7 +1583,7 @@ class Claudius(QtCore.QThread):
 		lnk.login(hostname,username,password)
 		self.emit(QtCore.SIGNAL('LNK'),lnk)
 		end=time.time()
-		print ('Claudius connected. Time elapsed: '+str('%.2f'%(end-start))+" seconds")
+		print('Claudius connected. Time elapsed: '+str('%.2f'%(end-start))+" seconds")
 		
 		
 
@@ -1622,14 +1621,14 @@ class watchStageThread(QtCore.QThread):
 		self.stage=stage()
 	def run(self):
 		#reads bytes from the stage to check position and updates the GUI     
-	        base_package = struct.Struct('<HHBB')
-	        base_package_length = base_package.size
+		base_package = struct.Struct('<HHBB')
+		base_package_length = base_package.size
 		while 1:
 			out = ''
-	      	 	move_out = ''
-	        	if base_package_length == 6:
-	        	        out += self.stage.ser.read(6)
-	                	if out == '\x44\x04\x01\x00\x01\x50':
+			move_out = ''
+			if base_package_length == 6:
+				out += self.stage.ser.read(6)
+				if out == '\x44\x04\x01\x00\x01\x50':
 					print("HOME")
 					self.main.logfile.write("HOME\n")
 					position=1 #Home				
@@ -1657,7 +1656,7 @@ class watchStageThread(QtCore.QThread):
 						self.emit(QtCore.SIGNAL('STAGE'),position)
 						QtGui.QApplication.processEvents()
 						break
-	            		else:
+				else:
 					print("[ERROR] Unknown position -- please send home")
 					self.main.logfile.write("[ERROR] Unknown position -- please send home\n")
 					position=4 #Unknown
