@@ -1,7 +1,7 @@
 #==============================================================================================#
 # ------------------------------ FHiRE GUI code -----------------------------------------------
 # ----------(GAM: Filterwheel, Guide Camera, Camera focuser, ADC focusers) --------------------
-# --------------------------- Version: 09/28/2020 ---------------------------------------------
+# --------------------------- Version: 10/01/2020 ---------------------------------------------
 #==============================================================================================#
 #=======================================================================================#
 # -------------------------------- Imports: --------------------------------------------
@@ -165,7 +165,7 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		super(MainUiClass,self).__init__(parent)
 		self.setupUi(self) #this sets up inheritance for fhireGUI2 variables
 
-		self.exp = None
+		self.exp = 0
 		#self.num_exp = 0
 		self.current_exp = 0
 
@@ -188,6 +188,9 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 
 		self.filterthread_startup = FilterThread_Startup(self.threadclass) #Filter indicator thread
 		self.filterthread_startup.start()
+
+		self.refractorthread = Refractor()
+		self.refractorthread.start()
 
 		#self.configthread = ConfigThread(self.threadclass) #Config thread
 		#self.configthread.start()
@@ -340,6 +343,22 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.afocus2_btn_sub.released.connect(self.motor_loop3.stop)
 		'''
 
+		self.autosave_btn.setCheckable(True)
+		self.autosave_btn.setStyleSheet("background-color: #c9d1d1")
+		self.autosave_btn.setStyleSheet("QPushButton:checked {background-color: #95fef9}") #blue/ON
+		self.autosave_btn.setText("OFF")
+		self.autosave_btn.pressed.connect(lambda:self.autosaving())
+		self.autosave = False
+
+		self.autoguiding_btn.setCheckable(True)
+		self.autoguiding_btn.setStyleSheet("background-color: #c9d1d1")
+		self.autoguiding_btn.setStyleSheet("QPushButton:checked {background-color: #95fef9}") #blue/ON
+		self.autoguiding_btn.setText("OFF")
+		self.autoguiding_btn.pressed.connect(lambda:self.autoguiding())
+		self.autoguide = False
+
+		self.opends9_btn.pressed.connect(self.reopen_ds9)
+
 		#Buttons - 'set' focus: 
 		#self.cfocus_setbtn.pressed.connect(self.cmove)
 		#self.afocus1_setbtn.pressed.connect(self.amove1)
@@ -365,10 +384,10 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		#self.splitter_btn.pressed.connect(self.moveLoop.move_splitter)
 		#self.splitter_btn.pressed.connect(lambda:self.stage_indicator(0))
 
-		self.exp_btn.pressed.connect(lambda:self.threadclass.thread(float(exp),
+		self.exp_btn.pressed.connect(lambda:self.threadclass.thread(float(self.exp),
 			self.num_exp_spn.value(),
 			str(self.file_path),
-			str(self.file_name))) #Button - take exposure
+			str(self.file_name),self.autosave)) #Button - take exposure
 
 		self.exp_btn.pressed.connect(self.update_i) #Update the value of i for exposure updates
 
@@ -377,6 +396,12 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		#self.printcen_btn.pressed.connect(self.mycen) #Button - Centroid
 
 		self.filter_btn.pressed.connect(lambda: self.threadclass.change_filter(self.filter_cmb.currentIndex())) #Button - filter
+
+	
+		#self.exp_btn_2.pressed.connect(lambda: self.refractorthread.take_exposure(float(self.exp_inp_2.text()),str(self.file_path),str(self.file_name)))
+		self.exp_btn_2.pressed.connect(self.refractor_exposure)
+
+		#self.exp_btn_2.pressed.connect(self.update_i)
 		
 		#self.newds9_btn.pressed.connect(self.reopen_ds9) #Button - 'Reopen DS9'
 
@@ -430,8 +455,11 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.remaining_lbl2.setText("0.0s")
 		self.exp_inp.setPlaceholderText("0")
 		self.exp_inp.returnPressed.connect(self.clear_exp)
-		self.exp_inp.textEdited.connect(self.get_exp)
+		self.exp_inp.textEdited.connect(lambda: self.get_exp('guiding camera'))
 		self.currentexp_lbl2.setText("0/0")
+
+		self.exp_inp_2.textEdited.connect(lambda: self.get_exp('refractor camera'))
+		self.exp_inp_2.setPlaceholderText("0")
 
 		#Button & List - select/open image in ds9:
 		#self.ds9_list.itemClicked.connect(self.set_ds9)
@@ -467,12 +495,28 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 
 #==================================
 # Methods to update widgets =======
-#==================================	
-	def autosaving(self,status):
-		if status == True:
-			pass
-		elif status == False:
-			pass
+#==================================
+	def refractor_exposure(self):
+		self.refractorthread.signal.emit([float(self.exp_inp_2.text()),str(self.file_path),str(self.file_name)])
+	
+	def autosaving(self):
+		if self.autosave_btn.isChecked():
+			#print("Checked?")
+			self.autosave_btn.setText("OFF")
+			self.autosave = False
+		else:
+			#print("UnChecked?")
+			self.autosave_btn.setText("ON")
+			self.autosave = True
+
+	def autoguiding(self):
+		if self.autoguiding_btn.isChecked():
+			self.autoguiding_btn.setText("OFF")
+			self.autoguide = False
+		else:
+			self.autoguiding_btn.setText("ON")
+			self.autoguide = True
+	
 
 	def setClaudiuslnk(self,lnk):
 		self.claudiuslnk = lnk
@@ -503,12 +547,12 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 	def set_path(self,path):
 		self.complete_path = str(path)
 		self.img_name = self.complete_path.split("/")[-1]
-		self.ds9_list.addItem(self.img_name)
+		#self.ds9_list.addItem(self.img_name)
 		self.last_exposed_2.setText(self.complete_path)
 
 	#Selecting image from list saves that full image path into the variable ds9_path:
-	def set_ds9(self):
-		self.ds9_path = str(self.complete_path).split(str(self.img_name))[0]+str(self.ds9_list.currentItem().text())
+	#def set_ds9(self):
+	#	self.ds9_path = str(self.complete_path).split(str(self.img_name))[0]+str(self.ds9_list.currentItem().text())
 
 	#Open the image selected from the list in ds9 & overlay saved region box:
 	def open_ds9(self):
@@ -598,7 +642,8 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 			self.filterthread_startup.stop()
 			#self.configthread.stop()
 			#self.moveStageThread.stop()
-	
+			self.refractorthread.stop()	
+
 			#self.claudiuslnk.logout() #new
 		#	self.threadclass.cooler_off
 			#self.cooler_rdb_off_3.setChecked(True)
@@ -607,6 +652,8 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 			print('Window Closed')
 		else:
 			event.ignore()
+
+
 
 
 	#Send command to Claudius via subprocess -- (Doesn't work -- try pxssh) **I think it does work, but double check**
@@ -732,8 +779,13 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.exp_inp.setPlaceholderText(self.exp)
 
 	#Non returnPressed alternative to setting exposure time:
-	def get_exp(self):
-		self.exp = self.exp_inp.text()
+	def get_exp(self, camera):
+		if camera == 'guiding camera':
+			self.exp = self.exp_inp.text()
+		elif camera == 'refractor camera':
+			self.exp = self.exp_inp_2.text()
+		else:
+			self.exp = 0
 		
 	#Set amount of steps -- focus stepper motors:
 	def cmove(self):
@@ -933,8 +985,8 @@ class ThreadClass(QtCore.QThread):
 		#self.j=None
 
 		#Starts an exposure progress thread
-		p = threading.Thread(target=self.time_start)
-		#p.start()
+		self.p = threading.Thread(target=self.time_start)
+		self.p.start()
 #==================================================
 # Connect to server, devices, indi properties =====
 #==================================================
@@ -1087,8 +1139,8 @@ class ThreadClass(QtCore.QThread):
 			print("property setup: CCD_VIDEO_FORMAT")
 		
 		#set up thread for creating the blob
-		#filterclient.blobEvent = threading.Event() 
-		#filterclient.blobEvent.clear()
+		filterclient.blobEvent = threading.Event() 
+		filterclient.blobEvent.clear()
 
 		#self.event=threading.Event()
 		#self.event.clear()
@@ -1149,7 +1201,8 @@ class ThreadClass(QtCore.QThread):
 		self.abort_dcamera[0].s = filterclient.PyIndi.ISS_ON
 		self.indiclient.sendNewSwitch(self.abort_dcamera)
 		print("Exposure aborted")
-		self.sig5.emit(abort = True)
+		abort = True
+		self.sig5.emit(abort)
 
 	#Retrievable method by TempThread -- Get current temperature
 	def get_temp(self):
@@ -1305,7 +1358,8 @@ class ThreadClass(QtCore.QThread):
 
 	#Take exposure 
 	def take_exposure(self):
-		start=time.time()
+		start = time.time()
+		print("Beginning exposure: autosave")
 		while(self.num_exp > 0):
 			self.expose_dcamera[0].value = float(self.exp)
 			#self.event.set()
@@ -1331,11 +1385,11 @@ class ThreadClass(QtCore.QThread):
 					f.write(blobfile.getvalue())
 
 				#Save the regions in case changed, Open new image in ds9 and overlay the saved region box
-				os.system('xpaset -p ds9 regions save '+self.main.regionpath)
-				os.system('xpaset -p ds9 fits '+str(self.complete_path)+' -zscale')
-				os.system('xpaset -p ds9 regions load '+self.main.regionpath) #new
-				print("Image Saved:")
-				print(self.complete_path)
+				#os.system('xpaset -p ds9 regions save '+self.main.regionpath)
+				#os.system('xpaset -p ds9 fits '+str(self.complete_path)+' -zscale')
+				#os.system('xpaset -p ds9 regions load '+self.main.regionpath) #new
+				print("Image Saved: %s" %self.complete_path)
+			self.num_exp -= 1
 
 
 				#------------------------------------------------------------------
@@ -1344,35 +1398,37 @@ class ThreadClass(QtCore.QThread):
 
 				#update coords.txt
 				# if there is a guidebox drawn, get the centroid of that as starting coords.  If not, just use the center of the image.
-				if read_region(self.main.regionpath) != None:
-					print("There's a region!")
-					[xcenter2, ycenter2] = imexcentroid(self.complete_path, self.main.regionpath)
+				#if read_region(self.main.regionpath) != None:
+				#	print("There's a region!")
+				#	[xcenter2, ycenter2] = imexcentroid(self.complete_path, self.main.regionpath)
 					
-				else:
+				#else:
 					#compute the center of the frame just taken
-					print("No region! "+str(read_region(self.main.regionpath)))
-					hdulist1 = pyfits.open(self.complete_path)
-					scidata1 = hdulist1[0].data
-					[xcenter2, ycenter2] = [int(scidata1.shape[0]/2),int(scidata1.shape[1]/2)]
-				print(xcenter2,ycenter2)
+				#	print("No region! "+str(read_region(self.main.regionpath)))
+				#	hdulist1 = pyfits.open(self.complete_path)
+				#	scidata1 = hdulist1[0].data
+				#	[xcenter2, ycenter2] = [int(scidata1.shape[0]/2),int(scidata1.shape[1]/2)]
+				#print(xcenter2,ycenter2)
 				# close and reopen coordinate file so it overwrites (is there a better way to do this?)
-				self.main.coordsfile = open('/home/fhire/Desktop/GUI/Reference/coords.txt', 'w')
-				self.main.coordsfile.write(str(xcenter2)+' '+str(ycenter2))
-				self.main.coordsfile.close()
+				#self.main.coordsfile = open('/home/fhire/Desktop/GUI/Reference/coords.txt', 'w')
+				#self.main.coordsfile.write(str(xcenter2)+' '+str(ycenter2))
+				#self.main.coordsfile.close()
 
-				f = int(float(self.get_phot(self.complete_path)))
+				#f = int(float(self.get_phot(self.complete_path)))
 				#self.sig7.emit(QtCore.SIGNAL('newFluxPoint'),f) ##** isn't defined in main thread**	#-----------------------------------------------------------------------------------
 
 			self.num_exp -= 1
 			self.sig6.emit(self.complete_path)
-			end=time.time()
-			print("Total time elapsed: "+str(end-start))
+			end = time.time()
+			print("Total time elapsed: %.2f" %(end-start))
 			QtGui.QApplication.processEvents()
 		time.sleep(1)
+		#self.t.terminate()
 
 	#*There's got to be a better way to overwrite images in the main exposure method*
 	def take_exposure_delete(self):
 		start = time.time()
+		print("Beginning exposure")
 		while(self.num_exp > 0):
 			self.expose_dcamera[0].value=float(self.exp)
 			#self.event.set()
@@ -1383,41 +1439,45 @@ class ThreadClass(QtCore.QThread):
 				fits=blob.getblobdata()
 				blobfile = io.BytesIO(fits)
 				#Set image prefix and directory path
-				self.complete_path = self.file_path+"/"+self.file_name+"1.fit"
+				self.complete_path = self.file_path+"/"+self.file_name+"_temp.fit"
+				print(self.complete_path)
 				#Increment the images
-				if os.path.exists(self.complete_path):
-					os.remove(self.complete_path) 
-					expand = 1
-					while True:
-						expand += 1
-						new_file_name = self.complete_path.split('1.fit')[0]+str(expand)+".fit"
-						if os.path.exists(new_file_name):
-							continue
-						else:
-							self.complete_path=new_file_name
+				#if os.path.exists(self.complete_path):
+				#	os.remove(self.complete_path) 
+				#	expand = 1
+				#	while True:
+				#		expand += 1
+				#		new_file_name = self.complete_path.split('1.fit')[0]+str(expand)+".fit"
+				#		print(new_file_name)
+				#		if os.path.exists(new_file_name):
+				#			continue
+				#		else:
+				#			self.complete_path = new_file_name
 				with open(self.complete_path, "wb") as f:
 					f.write(blobfile.getvalue())
+			self.num_exp -= 1
 
 				#update coords.txt
 				# if there is a guidebox drawn, get the centroid of that as starting coords.  If not, just use the center of the image.
-				if read_region(self.main.regionpath) != None:
-					print("There's a region!")
-					[xcenter2, ycenter2] = imexcentroid(self.complete_path, self.main.regionpath)
+				#if read_region(self.main.regionpath) != None:
+				#	print("There's a region!")
+				#	[xcenter2, ycenter2] = imexcentroid(self.complete_path, self.main.regionpath)
 					
-				else:
+				#else:
 					#compute the center of the frame just taken
-					print("No region! "+str(read_region(self.main.regionpath)))
-					hdulist1 = pyfits.open(self.complete_path)
-					scidata1 = hdulist1[0].data
-					[xcenter2, ycenter2] = [int(scidata1.shape[0]/2),int(scidata1.shape[1]/2)]
-				print(xcenter2,ycenter2)
+				#	print("No region! "+str(read_region(self.main.regionpath)))
+				#	hdulist1 = pyfits.open(self.complete_path)
+				#	scidata1 = hdulist1[0].data
+				#	[xcenter2, ycenter2] = [int(scidata1.shape[0]/2),int(scidata1.shape[1]/2)]
+				#print(xcenter2,ycenter2)
 				# close and reopen coordinate file so it overwrites (is there a better way to do this?)
-				self.main.coordsfile = open('/home/fhire/Desktop/GUI/Reference/coords.txt', 'w')
-				self.main.coordsfile.write(str(xcenter2)+' '+str(ycenter2))
-				self.main.coordsfile.close()
+				#self.main.coordsfile = open('/home/fhire/Desktop/GUI/Reference/coords.txt', 'w')
+				#self.main.coordsfile.write(str(xcenter2)+' '+str(ycenter2))
+				#self.main.coordsfile.close()
 
-				f = int(float(self.get_phot(self.complete_path)))
+				#f = int(float(self.get_phot(self.complete_path)))
 				#self.emit(QtCore.SIGNAL('newFluxPoint'),f) ##*** Isn't picked up in the main thread ***
+				#self.t.terminate()
 
 	#Separate exposure thread
 	def thread(self,exp,num_exp,file_path,file_name,saving):
@@ -1425,12 +1485,15 @@ class ThreadClass(QtCore.QThread):
 		self.file_path=file_path
 		self.file_name=file_name
 		self.exp=exp
+
 		if saving==True:
-			t=threading.Thread(target=self.take_exposure)
-			t.start()
+			self.t=threading.Thread(target=self.take_exposure)
+			print(self.t, self.t.is_alive())
+			self.t.start()
 		if saving==False:
-			t=threading.Thread(target=self.take_exposure_delete)
-			t.start()
+			self.t=threading.Thread(target=self.take_exposure_delete)
+			print(self.t, self.t.is_alive())
+			self.t.start()
 
 
 	#Make complete_path available for MainUiClass -- (Doesn't work)
@@ -1454,10 +1517,11 @@ class ThreadClass(QtCore.QThread):
 			time.sleep(0.5)
 			#self.event.clear()
 			#start=True
-			start = False
+			start = True
 			self.sig7.emit(start)
 
 	def stop(self):
+		#self.p.terminate()
 		self.terminate()
 
 #=========================================================================================#
@@ -1554,6 +1618,56 @@ class Claudius(QtCore.QThread):
 		print('Claudius connected. Time elapsed: '+str('%.2f'%(end-start))+" seconds")
 
 	def stop(self):
+		self.terminate()
+
+class Refractor(QtCore.QThread):
+	signal = pyqtSignal('PyQt_PyObject')
+
+	def __init__(self,parent=None):
+		super(Refractor,self).__init__(parent)
+	def run(self):
+		time.sleep(1)
+		start = time.time()
+		self.lnk = pxssh.pxssh()
+		hostname = '10.212.212.46'
+		username = 'fhire'
+		password = 'WIROfhire17'
+		self.lnk.login(hostname,username,password)
+		#self.signal.emit(lnk)
+		end = time.time()
+		print('Refractor RPi connected. Time elapsed: '+str('%.2f'%(end-start))+" seconds")
+
+		self.signal.connect(self.take_exposure)
+
+	def take_exposure(self,data):
+		exp = data[0]; fpath = data[1]; fname = data[2]
+		ms = exp*1000000 #time in microSec
+		#fname = 'refractor.jpg'
+		#print(fname)
+		#print(fpath)
+		sleep = exp + 2
+		#fname = 'refractor.jpg'
+
+		self.lnk.sendline('raspistill -ISO 900 -ss %s -br 80 -co 100 -o %s.jpg' %(ms,fname))
+		print("Taking image")
+		time.sleep(sleep)
+		print("Image taken")
+		self.lnk.sendline('scp %s.jpg fhire@10.212.212.80:%s' %(fname,fpath))
+		#print("fhire@10.212.212.80\'s password:")
+		i = self.lnk.expect('fhire@10.212.212.80\'s password:')
+		if i == 0:
+			print("Receiving image")
+			#print("Sending password")
+			self.lnk.sendline('WIROfhire17')
+			time.sleep(3)
+			#print("Password sent")
+			print("Refractor image received")
+		elif i == 1:
+			print("Got the key or connect timeout")
+			pass
+
+	def stop(self):
+		self.lnk.close()
 		self.terminate()
 		
 
