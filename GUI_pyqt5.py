@@ -166,7 +166,6 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.setupUi(self) #this sets up inheritance for fhireGUI2 variables
 
 		self.exp = 0
-		#self.num_exp = 0
 		self.current_exp = 0
 
 		self.num_exp = self.num_exp_spn.value()
@@ -236,18 +235,6 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 # Connections to emitted signals from other threads ====
 #=======================================================
 # Default values -------------------------------------
-		#Default config spinbuttons:
-		#self.configthread.sig1.connect(self.setBand)
-		#self.configthread.sig2.connect(self.setXBin)
-		#self.configthread.sig3.connect(self.setYBin)
-		#self.configthread.sig4.connect(self.setOffset)
-		#self.configthread.sig5.connect(self.setGain)
-
-		#Default frame sizes:
-		#self.configthread.sig6.connect(self.setXPosition)
-		#self.configthread.sig7.connect(self.setYPosition)
-		#self.configthread.sig8.connect(self.setXFrame)
-		#self.configthread.sig9.connect(self.setYFrame)
 
 		#self.threadclass.sig1.connect(self.setCooler) #Default cooler radiobutton
 		#self.threadclass.sig2.connect(self.setFrameType) #Default frame type radiobutton
@@ -272,10 +259,8 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		#Update filter indicator
 		self.filterthread_startup.signal.connect(self.setFilterInd)
 
-		#self.connect(self.watchStageThread,QtCore.SIGNAL('STAGE'),self.stage_indicator) #Update stage indicator
+		self.watchStageThread.connect(self.stage_indicator) #Update stage indicator
 
-		#self.fluxgraph.connect(self.threadclass, QtCore.SIGNAL('newFluxPoint'),self.add_point) #Update flux graph
-	
 # Etc signals -------------------------------------------
 		self.threadclass.sig5.connect(self.time_dec) #Abort exposure
 
@@ -291,58 +276,14 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 # Define widgets + connect to functionalities ====
 #=================================================
 # Line edits ------------------------------------
-		#Default line edit - focus:
-		#self.cfocus_lineEdit.setText(str(1))
-		#self.afocus1_lineEdit.setText(str(1))
-		#self.afocus2_lineEdit.setText(str(1))
 
 		#Line edits - set Directory/Prefix:
 		self.dir_inp.returnPressed.connect(self.setDirectory)
 		self.prefix_inp.returnPressed.connect(self.setPrefix)
 
-		#Line edits - frame size:
-		#self.leftmost_lineEdit.returnPressed.connect(lambda:self.threadclass.update_xposition(int(self.leftmost_lineEdit.text())))
-		#self.leftmost_lineEdit.returnPressed.connect(self.clear_xposition)
-
-		#self.tpmost_lineEdit.returnPressed.connect(lambda:self.threadclass.update_yposition(int(self.tpmost_lineEdit.text())))
-		#self.tpmost_lineEdit.returnPressed.connect(self.clear_yposition)
-
-		#self.xframe_size.returnPressed.connect(lambda:self.threadclass.update_xframe(int(self.xframe_size.text())))
-		#self.xframe_size.returnPressed.connect(self.clear_xframe)
-
-		#self.yframe_size.returnPressed.connect(lambda:self.threadclass.update_yframe(int(self.yframe_size.text())))
-		#self.yframe_size.returnPressed.connect(self.clear_yframe)
-
 		self.claudius_command_lineEdit.returnPressed.connect(self.send_command) #Line edit - send command to Claudius
 
 # Buttons ------------------------------------
-		'''
-		#Buttons - focus (stepper motors):
-		self.cfocus_btn_add.pressed.connect(self.simulThread1.start)
-		self.cfocus_btn_add.pressed.connect(self.motor_loop1.move_forward)
-		self.cfocus_btn_add.released.connect(self.motor_loop1.stop)
-
-		self.afocus1_btn_add.pressed.connect(self.simulThread2.start)
-		self.afocus1_btn_add.pressed.connect(self.motor_loop2.move_forward)
-		self.afocus1_btn_add.released.connect(self.motor_loop2.stop)
-
-		self.afocus2_btn_add.pressed.connect(self.simulThread3.start)
-		self.afocus2_btn_add.pressed.connect(self.motor_loop3.move_forward)
-		self.afocus2_btn_add.released.connect(self.motor_loop3.stop)
-
-		self.cfocus_btn_sub.pressed.connect(self.simulThread1.start)
-		self.cfocus_btn_sub.pressed.connect(self.motor_loop1.move_reverse)
-		self.cfocus_btn_sub.released.connect(self.motor_loop1.stop)
-
-		self.afocus1_btn_sub.pressed.connect(self.simulThread2.start)
-		self.afocus1_btn_sub.pressed.connect(self.motor_loop2.move_reverse)
-		self.afocus1_btn_sub.released.connect(self.motor_loop2.stop)
-
-		self.afocus2_btn_sub.pressed.connect(self.simulThread3.start)
-		self.afocus2_btn_sub.pressed.connect(self.motor_loop3.move_reverse)
-		self.afocus2_btn_sub.released.connect(self.motor_loop3.stop)
-		'''
-
 		self.autosave_btn.setCheckable(True)
 		self.autosave_btn.setStyleSheet("background-color: #c9d1d1")
 		self.autosave_btn.setStyleSheet("QPushButton:checked {background-color: #95fef9}") #blue/ON
@@ -359,86 +300,32 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 
 		self.opends9_btn.pressed.connect(self.reopen_ds9)
 
-		#Buttons - 'set' focus: 
-		#self.cfocus_setbtn.pressed.connect(self.cmove)
-		#self.afocus1_setbtn.pressed.connect(self.amove1)
-		#self.afocus2_setbtn.pressed.connect(self.amove2)
+		#Radio buttons - stage:
+		self.home_rb.toggled.connect(self.moveLoop.home)
+		self.home_rb.toggled.connect(lambda: self.stage_indicator(0))
+		self.mirror_rb.toggled.connect(self.moveLoop.move_mirror)
+		self.mirror_rb.toggled.connect(lambda: self.stage_indicator(0))
+		self.splitter_rb.toggled.connect(self.moveLoop.move_splitter)
+		self.splitter_rb.toggled.connect(lambda: self.stage_indicator(0))
 
-		#Button - auto save:
-		#self.saving_on_rdb.toggled.connect(lambda:self.autosaving(True))
-		#self.saving_off_rdb.toggled.connect(lambda:self.autosaving(False))
-
-		#Button - temperature:
-		#self.temp_setbtn.pressed.connect(lambda: self.threadclass.change_temp(float(self.temp_lineEdit.text())))
-		#self.temp_setbtn.pressed.connect(self.temp_notif)
-		#self.temp_lineEdit.returnPressed.connect(lambda: self.threadclass.change_temp(float(self.temp_lineEdit.text())))
-		#self.temp_lineEdit.returnPressed.connect(self.temp_notif)
-
-		#Buttons - stage:
-		#self.home_btn.pressed.connect(self.moveLoop.home)
-		#self.home_btn.pressed.connect(lambda:self.stage_indicator(0))
-	
-		#self.mirror_btn.pressed.connect(self.moveLoop.move_mirror)
-		#self.mirror_btn.pressed.connect(lambda:self.stage_indicator(0))
-
-		#self.splitter_btn.pressed.connect(self.moveLoop.move_splitter)
-		#self.splitter_btn.pressed.connect(lambda:self.stage_indicator(0))
-
-		self.exp_btn.pressed.connect(lambda:self.threadclass.thread(float(self.exp),
+		self.exp_btn.pressed.connect(lambda:self.threadclass.thread(float(self.exp_inp.text()),
 			self.num_exp_spn.value(),
 			str(self.file_path),
 			str(self.file_name),self.autosave)) #Button - take exposure
 
 		self.exp_btn.pressed.connect(self.update_i) #Update the value of i for exposure updates
+		self.exp_btn.pressed.connect(lambda: self.get_exp('guiding camera'))
 
 		self.exp_btn2.pressed.connect(self.threadclass.abort_exposure) #Abort exposure 		
 
-		#self.printcen_btn.pressed.connect(self.mycen) #Button - Centroid
-
 		self.filter_btn.pressed.connect(lambda: self.threadclass.change_filter(self.filter_cmb.currentIndex())) #Button - filter
 
-	
-		#self.exp_btn_2.pressed.connect(lambda: self.refractorthread.take_exposure(float(self.exp_inp_2.text()),str(self.file_path),str(self.file_name)))
 		self.exp_btn_2.pressed.connect(self.refractor_exposure)
-
-		#self.exp_btn_2.pressed.connect(self.update_i)
-		
-		#self.newds9_btn.pressed.connect(self.reopen_ds9) #Button - 'Reopen DS9'
+		self.exp_btn_2.pressed.connect(lambda: self.get_exp('refractor camera'))
 
 # Radio Buttons ------------------------------------
-		#Radiobuttons - frame type toggle:
-		#self.frameType_rdb_light.toggled.connect(self.threadclass.frametype_light)
-		#self.frameType_rdb_dark.toggled.connect(self.threadclass.frametype_dark)
-		#self.frameType_rdb_bias.toggled.connect(self.threadclass.frametype_bias)
-		#self.frameType_rdb_flat.toggled.connect(self.threadclass.frametype_flat)
-
-		#Radiobuttons - Bit/pixel toggle:
-		#self.eight_rdb.toggled.connect(self.threadclass.bit_eight)
-		#self.sixteen_rdb.toggled.connect(self.threadclass.bit_sixteen)	
-
-		#Radiobuttons - cooler toggle:
-		#self.cooler_rdb_on.toggled.connect(self.threadclass.cooler_on)
-		#self.cooler_rdb_off.toggled.connect(self.threadclass.cooler_off)
-
-		#Default autoguiding + saving guider images: 
-		#self.auto_off_rdb.setChecked(True)
-		#self.saving_off_rdb.setChecked(True)
 
 # Spin Boxes ------------------------------------
-		#Spinbox ranges:
-		#self.band_spn.setRange(0,500)
-		#self.xbin_spinbtn.setRange(0,100)
-		#self.ybin_spinbtn.setRange(0,100)
-		#self.offset_spn.setRange(0,1000)
-		#self.gain_spn.setRange(0,500)
-
- 		#Spinboxes - etc CCD config:
-		#self.band_spn.valueChanged.connect(self.threadclass.update_band) 
-		#self.xbin_spinbtn.valueChanged.connect(self.threadclass.update_xbin)
-		#self.ybin_spinbtn.valueChanged.connect(self.threadclass.update_ybin)	
-		#self.offset_spn.valueChanged.connect(self.threadclass.update_offset)
-		#self.gain_spn.valueChanged.connect(self.threadclass.update_gain)
-		#(Add an option to input amount? -- ie pressedReturn)
 
 		self.num_exp_spn.valueChanged.connect(self.update_num) #Spinbox - Update number of exposures
 
@@ -455,43 +342,17 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.remaining_lbl2.setText("0.0s")
 		self.exp_inp.setPlaceholderText("0")
 		self.exp_inp.returnPressed.connect(self.clear_exp)
-		self.exp_inp.textEdited.connect(lambda: self.get_exp('guiding camera'))
+		#self.exp_inp.textEdited.connect(lambda: self.get_exp('guiding camera'))
 		self.currentexp_lbl2.setText("0/0")
 
-		self.exp_inp_2.textEdited.connect(lambda: self.get_exp('refractor camera'))
+		#self.exp_inp_2.textEdited.connect(lambda: self.get_exp('refractor camera'))
 		self.exp_inp_2.setPlaceholderText("0")
-
-		#Button & List - select/open image in ds9:
-		#self.ds9_list.itemClicked.connect(self.set_ds9)
-		#self.ds9_btn.pressed.connect(self.open_ds9)
 
 		#Default file_path + file_name:
 		self.file_path = "/home/fhire/Desktop"
 		self.dir_inp.setPlaceholderText(self.file_path)
 		self.file_name = "GAMimage"
 		self.prefix_inp.setPlaceholderText(self.file_name.split(".fit")[0]+"XXX.fit")
-
-# Graphs ---------------*** IN THE WORKS ***----------------------- 
-		'''
-		# Set up Flux Graphics
-		# set up Graph attributes
-		self.fluxgraph.showAxis('top', show=True)
-		self.fluxgraph.showAxis('right', show=True)
-		self.fluxgraph.setLabel('left', text='Average Flux')
-		self.fluxgraph.setLabel('bottom', text='Time (s)')
-
-		# set up flux graphic variables:
-		self.imgnum = 1
-		self.xpoints = []
-		self.ypoints = []
-		self.avgline = None
-		self.overall_start_time = time.time()
-		self.yavg = None
-
-		self.templist = []
-		#self.tempgraph.plot(self,pen=(225,0,0))
-		#curve=self.tempgraph
-		'''
 
 #==================================
 # Methods to update widgets =======
@@ -501,11 +362,9 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 	
 	def autosaving(self):
 		if self.autosave_btn.isChecked():
-			#print("Checked?")
 			self.autosave_btn.setText("OFF")
 			self.autosave = False
 		else:
-			#print("UnChecked?")
 			self.autosave_btn.setText("ON")
 			self.autosave = True
 
@@ -523,20 +382,18 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 	
 	#Display modes for stage indicator:
 	def stage_indicator(self,position):
-		if position == 0:
-			#self.stage_ind.setText("BUSY")
+		if position == 0: #busy
 			self.stage_ind.setStyleSheet("background-color: orange;\n""border: orange;")
-		if position == 1:
-			self.stage_ind.setText("HOME")
+		if position == 1: #home
+			self.home_rb.setChecked(True)
 			self.stage_ind.setStyleSheet("background-color: rgb(0, 255, 0);\n""border: rgb(0,255,0);")
-		if position == 2:
-			self.stage_ind.setText("MIRROR")
+		if position == 2: #mirror
+			self.mirror_rb.setChecked(True)
 			self.stage_ind.setStyleSheet("background-color: rgb(0, 255, 0);\n""border: rgb(0,255,0);")
-		if position == 3:
-			self.stage_ind.setText("SPLITTER")
+		if position == 3: #splitter
+			self.splitter_rb.setChecked(True)
 			self.stage_ind.setStyleSheet("background-color: rgb(0, 255, 0);\n""border: rgb(0,255,0);")
-		if position == 4:
-			self.stage_ind.setText("UNKNOWN")
+		if position == 4: #unknown
 			self.stage_ind.setStyleSheet("background-color: rgb(255, 92, 42);\n""border: rgb(255,92,42);")
 
 	#Get complete path from Threadclass's exposing method -- updates after every exposure:
@@ -547,12 +404,7 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 	def set_path(self,path):
 		self.complete_path = str(path)
 		self.img_name = self.complete_path.split("/")[-1]
-		#self.ds9_list.addItem(self.img_name)
 		self.last_exposed_2.setText(self.complete_path)
-
-	#Selecting image from list saves that full image path into the variable ds9_path:
-	#def set_ds9(self):
-	#	self.ds9_path = str(self.complete_path).split(str(self.img_name))[0]+str(self.ds9_list.currentItem().text())
 
 	#Open the image selected from the list in ds9 & overlay saved region box:
 	def open_ds9(self):
@@ -568,31 +420,14 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		filter_dict = {1:"ND 1.8", 2:"Empty", 3:"ND 3.0", 4:"Empty", 5:"V Filter", 6:"Empty",
 				7:"R Filter", 8:"Empty"}
 		print(filter_dict[self.filter_cmb.currentIndex])
-		'''
-		if self.filter_cmb.currentIndex==1:
-			print("ND 1.8")
-		if self.filter_cmb.currentIndex==2:
-			print("Empty")
-		if self.filter_cmb.currentIndex==3:
-			print("ND 3.0")
-		if self.filter_cmb.currentIndex==4:
-			print("Empty")
-		if self.filter_cmb.currentIndex==5:
-			print("V Filter")
-		if self.filter_cmb.currentIndex==6:
-			print("Empty")
-		if self.filter_cmb.currentIndex==7:
-			print("R Filter")
-		if self.filter_cmb.currentIndex==8:
-			print("Empty")
-		'''
 
-	#Centroiding method:
-	def mycen(self):
+	#Centroiding method - autoguiding:
+	def mycen(self,imgpath):
 		#imgpath=self.complete_path
-		imgpath='/home/fhire/Desktop/GUI/GAMimage71.fit' #temp path for testing
-		print(imgpath)
+		#imgpath='/home/fhire/Desktop/GUI/GAMimage71.fit' #temp path for testing
+		print(imgpath) #does imgpath not work?
 
+		#position of the optical fiber
 		os.system("xpaset -p ds9 regions command '{point 1065 360 # point=x 20 color=red}'")
 		
 		# save current ds9 regions to reg file and then read and compute centroid
@@ -611,15 +446,12 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 			yoffset = "ee "+str(abs(int(.057*ydiff)))
 		elif ydiff >= 0:
 			yoffset = "ww "+str(int(.057*ydiff))	
+		
 		print("("+str(xcenter)+","+str(ycenter)+")")
 		print(xoffset+" "+yoffset)
 
-		self.centroid_lbl.setText("("+str(xcenter)+","+str(ycenter)+")")
-		self.move_lbl_2.setText(xoffset+" "+yoffset)
-
-	#Print set temperature when set:
-	def temp_notif(self):
-		print("Temperature set to "+str(self.temp_lineEdit.text())+" C")
+		self.move_offset = (xoffset+";"+yoffset)
+		self.send_command2()
 
 	#Updates i for exposure updates:
 	def update_i(self):
@@ -653,29 +485,26 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		else:
 			event.ignore()
 
-
-
-
 	#Send command to Claudius via subprocess -- (Doesn't work -- try pxssh) **I think it does work, but double check**
 	def send_command(self):
 		command = str(self.claudius_command_lineEdit.text())
 		self.claudius_command_lineEdit.clear()
 		print("<b>observer@claudius: </b>"+command)
-		#new
-		"""command_claudius=("ssh observer@claudius "+ command)
-		command_final=command_claudius.split(" ")
-		print command_final
-		self.logfile.write(command_final+'\n')
-		call(command_final)"""
 		
 		self.claudiuslnk.sendline(command) 
 		self.claudiuslnk.prompt()
 		print(self.claudiuslnk.before) 
- 
-		"""out, err=Popen(command,stdout=PIPE).communicate()
-		print (out)
-		self.logfile.write(out)
-		self.logfile.write('\n')"""	
+
+	#Send command - autoguiding
+	def send_command2(self):
+		command = self.move_offset
+		#self.claudius_command_lineEdit.clear()
+		print("<span style=\"color:#0000ff;\"><b>observer@claudius: </b>"+command+"</span>")
+		
+		#self.claudiuslnk.sendline(command)
+		#self.claudiuslnk.prompt()
+		#print("<span style=\"color:#0000ff;\">"+self.claudiuslnk.before+"</span>")
+ 	
 
 	# (Add a check to make sure the directory exists. If not, prompt user to create new one (Doesn't work).)
 	def setDirectory(self):
@@ -694,47 +523,7 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 			#	return file_path
 			#	self.dir_inp.setPlaceholderText(file_path)	
 
-	'''
-	#Add a point to intensity graphic -- new --- needs to be own thread?
-	def add_point(self,f):
-		# plot the latest point
-		self.fluxgraph.plot([int(time.time()-self.overall_start_time)],[f],symbol='o',symbolBrush='b', symbolPen='k',symbolSize=7)
-		self.xpoints.append(int(time.time()-self.overall_start_time))
-		self.ypoints.append(f)
-		# for the first 10 points, calculate an average and project into the future
-		if self.avgline != None:		
-			self.avgline.clear()
-		if self.imgnum < 11:
-			# only update the average if it's one of first 10 points
-			self.yavg = np.mean(self.ypoints)
-		self.avgline = self.fluxgraph.plot([self.xpoints[0], self.xpoints[-1]+(0.5*self.xpoints[-1])],[self.yavg, self.yavg],pen=pg.mkPen('r', width=2,  style=QtCore.Qt.DashLine))
-
-		self.imgnum += 1
-			
-		# check if there's a significant change in average
-		if self.imgnum > 21:
-			recent_avg = np.mean(self.ypoints[-10:-1])
-			if np.abs(recent_avg-self.yavg) >= 0.33*self.yavg:
-				raise ValueError("Significant change in average flux; check for cloud cover or other interference")
-	'''
 #------------------------------------------------------------------------------------#
-
-	#Make frame size input more responsive -- clears text and changes placeholder:
-	def clear_xposition(self):
-		self.leftmost_lineEdit.setPlaceholderText(self.leftmost_lineEdit.text())
-		self.leftmost_lineEdit.clear()
-
-	def clear_yposition(self):
-		self.tpmost_lineEdit.setPlaceholderText(self.tpmost_lineEdit.text())
-		self.tpmost_lineEdit.clear()
-
-	def clear_xframe(self):
-		self.xframe_size.setPlaceholderText(self.xframe_size.text())
-		self.xframe_size.clear()
-
-	def clear_yframe(self):
-		self.yframe_size.setPlaceholderText(self.yframe_size.text())
-		self.yframe_size.clear()
 
 	#Update remaining time, progress bar and exposure count:
 	def time_start(self,start):
@@ -773,10 +562,10 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 
 	#Make exposure time input more responsive -- clears text and changes placeholder:
 	def clear_exp(self):
-		self.exp = self.exp_inp.text()
-		print("Set exposure time to: "+self.exp+" seconds")
+		self.exp2 = self.exp_inp.text()
+		print("Set exposure time to: "+self.exp2+" seconds")
 		self.exp_inp.clear()
-		self.exp_inp.setPlaceholderText(self.exp)
+		self.exp_inp.setPlaceholderText(self.exp2)
 
 	#Non returnPressed alternative to setting exposure time:
 	def get_exp(self, camera):
@@ -803,38 +592,6 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 				stepper.step()
 				i += 1
 				self.cfocus_count_add()	
-	def amove1(self):
-		i = 0
-		num = int(self.afocus1_lineEdit.text())
-		if(num < 0):
-			stepper2.set_direction(ccw)
-			while (i > num):
-				stepper2.step()
-				i -= 1
-				self.afocus1_count_sub()
-		if(num > 0):
-			stepper2.set_direction(cw)
-			while (i < num):
-				stepper2.step()
-				i += 1
-				self.afocus1_count_add()	
-
-	def amove2(self):
-		i = 0
-		num = int(self.afocus2_lineEdit.text())
-		if(num < 0):
-			stepper3.set_direction(ccw)
-			while (i > num):
-				stepper3.step()
-				i -= 1
-				self.afocus2_count_sub()
-		if(num > 0):
-			stepper3.set_direction(cw)
-			while (i < num):
-				stepper3.step()
-				i += 1
-				self.afocus2_count_add()	
-
 				
 	def setPrefix(self):
 		self.file_name
@@ -852,19 +609,6 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 	#Write to textBox terminal_edit:
 	def normalOutputWritten(self,text):
 		self.terminal_edit.append(text)
-
-	#Set default frame size values:
-	def setXPosition(self,xposition):
-		self.leftmost_lineEdit.setPlaceholderText(str(xposition))
-		
-	def setYPosition(self,yposition):
-		self.tpmost_lineEdit.setPlaceholderText(str(yposition))
-
-	def setXFrame(self,xframe):
-		self.xframe_size.setPlaceholderText(str(xframe))
-		
-	def setYFrame(self,yframe):
-		self.yframe_size.setPlaceholderText(str(yframe))
 		
 	#Focus counter methods:
 	def cfocus_count_add(self):
@@ -877,85 +621,14 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		count -= 1
 		self.cfocus_count.setText(str(count))
 
-	def afocus1_count_add(self):
-		count = int(self.afocus1_count.text())
-		count += 1
-		self.afocus1_count.setText(str(count))
-
-	def afocus1_count_sub(self):
-		count = int(self.afocus1_count.text())
-		count -= 1
-		self.afocus1_count.setText(str(count))
-
-	def afocus2_count_add(self): 
-		count = int(self.afcous2_count.text()) #**forgot to fix this object name**
-		count += 1
-		self.afcous2_count.setText(str(count)) 
-	
-	def afocus2_count_sub(self):
-		count = int(self.afcous2_count.text())
-		count -= 1
-		self.afcous2_count.setText(str(count))
-
 	#Set default filter position:
 	def setSlot(self,slot):
 		self.filter_cmb.setCurrentIndex(slot)
 
-	#Set default checked frame type radiobutton:
-	def setFrameType(self,typ):
-		if typ == 0:
-			self.frameType_rdb_light.setChecked(True)
-		elif typ == 1:
-			self.frameType_rdb_bias.setChecked(True)
-		elif typ == 2:
-			self.frameType_rdb_dark.setChecked(True)
-		elif typ == 3:
-			self.frameType_rdb_flat.setChecked(True)
-
-	#Set default checked bit/pix radiobutton:
-	def setBit(self,bit):
-		if bit == 0:
-			self.eight_rdb.setChecked(True)
-		elif bit == 1:
-			self.sixteen_rdb.setChecked(True)
-
-	#Set default checked cooler radiobutton:
-	def setCooler(self,cool):
-		if cool == 0:
-			self.cooler_rdb_on.setChecked(True)
-		elif cool == 1:
-			self.cooler_rdb_off.setChecked(True)
-
-	#Set spinbutton default values:
-	def setBand(self,band):
-		self.band_spn.setValue(band)
-	def setXBin(self,xbin):
-		self.xbin_spinbtn.setValue(xbin)
-	def setYBin(self,ybin):
-		self.ybin_spinbtn.setValue(ybin)
-	def setOffset(self,offset):
-		self.offset_spn.setValue(offset)
-	def setGain(self,gain):
-		self.gain_spn.setValue(gain)
-
-	#Update temperature and graph: -- **graph is lagging now**
-	def setTemp(self,temp):
-		self.ctemp_lbl2.setText(str(temp)+" C")
-		self.templist.append(temp)
-		self.tempgraph.plot(self.templist,pen=(255,0,0))
-
-	#Update cooler power:
-	def setCPower(self,cpower):
-		self.cpower_lbl2.setText(str(cpower)+" %")
-
-	#Update filter indicator: -- **(add one for errors?)**
 	def setFilterInd(self,busy):
 		if(busy == True):
-			#self.filter_ind.setText("BUSY") 
 			self.filter_ind.setStyleSheet("background-color: orange;\n""border: orange;")
 		elif(busy == False):
-			#time.sleep(1)
-			#self.filter_ind.setText("OKAY")
 			self.filter_ind.setStyleSheet("background-color: rgb(0, 255, 0)")
 
 #===============================================================================================#
@@ -965,12 +638,12 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 # ------------------------------------ Client Thread ------------------------------------------
 #===============================================================================================#
 class ThreadClass(QtCore.QThread): 
-	sig = [pyqtSignal(int) for i in range(7)]	
-	sig1,sig2,sig3,sig4,sig5,sig6,sig7 = sig[0:]		
+	sig = [pyqtSignal(int) for i in range(6)]	
+	sig1,sig2,sig3,sig4,sig5,sig7 = sig[0:]	
+	sig6 = pyqtSignal(str)	
 	def __init__(self,main):
 		self.main = main
 		super(ThreadClass,self).__init__(main)
-		#Define global variables ** Do you need to define them as None here anyways? **
 		self.wheel = "QHYCFW2"
 		self.dwheel = self.connect_dwheel = self.slot_dwheel = None
 
@@ -980,12 +653,10 @@ class ThreadClass(QtCore.QThread):
 		self.binning_dcamera = self.frame_dcamera = self.frametype_dcamera = None
 		self.controls_dcamera = self.bit_dcamera = None
 		self.expose_dcamera = self.abort_dcamera = self.blob_dcamera = None
-	
-		#self.complete_path=None
-		#self.j=None
 
 		#Starts an exposure progress thread
 		self.p = threading.Thread(target=self.time_start)
+		self.p.setDaemon(True)
 		self.p.start()
 #==================================================
 # Connect to server, devices, indi properties =====
@@ -1140,10 +811,12 @@ class ThreadClass(QtCore.QThread):
 		
 		#set up thread for creating the blob
 		filterclient.blobEvent = threading.Event() 
+		#filterclient.blobEvent.setDaemon(True)
 		filterclient.blobEvent.clear()
 
-		#self.event=threading.Event()
-		#self.event.clear()
+		self.event = threading.Event()
+		#self.event.setDaemon(True)
+		self.event.clear()
 
 		time.sleep(1)
 		end=time.time()
@@ -1167,15 +840,6 @@ class ThreadClass(QtCore.QThread):
 		for x in frametype:
 			if x == filterclient.PyIndi.ISS_ON:
 				typ = frametype[x]
-		
-		#if(self.frametype_dcamera[0].s == filterclient.PyIndi.ISS_ON):#Returns an error? --sometimes
-		#	typ=0
-		#if(self.frametype_dcamera[1].s == filterclient.PyIndi.ISS_ON):
-		#	typ=1
-		#if(self.frametype_dcamera[2].s == filterclient.PyIndi.ISS_ON):
-		#	typ=2
-		#if(self.frametype_dcamera[3].s == filterclient.PyIndi.ISS_ON):
-		#	typ=3
 		self.sig2.emit(typ)
 	
 		#Set default filter slot default value -- send current value to MainUiClass
@@ -1227,12 +891,8 @@ class ThreadClass(QtCore.QThread):
 	def change_filter(self,slot):
 		self.slot_dwheel[0].value = 1 #Why do you send the wheel home each time?
 		self.indiclient.sendNewNumber(self.slot_dwheel)
-		#print("Indi (before): "+ str(self.slot_dwheel[0].value))
-		#print(slot)
 		self.slot_dwheel[0].value = slot+1
-		#print("Ours: "+ str(slot+1))
 		self.indiclient.sendNewNumber(self.slot_dwheel)
-		#print("Indi: "+ str(self.slot_dwheel[0].value))
 
 	#Turn cooler on
 	def cooler_on(self):
@@ -1338,39 +998,24 @@ class ThreadClass(QtCore.QThread):
 		self.temp_dcamera[0].value = temp
 		self.indiclient.sendNewNumber(self.temp_dcamera)
 
-	'''
-	# Get the photometry / average flux of an image -- new
-	def get_phot(self, imgpath):
-		iraf.noao()
-		s = iraf.digiphot(Stdout=1)
-		s = iraf.apphot(Stdout=1)
-
-		s = iraf.phot(imgpath, coords="/home/fhire/Desktop/GUI/Reference/coords.txt", output="/home/fhire/Desktop/GUI/Reference/phot.txt", interactive="NO", graphics="no", verify="no", Stdout=1)
-
-		txdump = iraf.txdump("/home/fhire/Desktop/GUI/Reference/phot.txt", "I*,XCEN,YCEN,FLUX,MAG", "yes", Stdout=1)
-
-		#update the photlog file
-		self.main.photlog.write(' '.join(txdump)+'\n')
-		
-		return txdump[0].split()[7]
-	'''
-
-
 	#Take exposure 
 	def take_exposure(self):
 		start = time.time()
 		print("Beginning exposure: autosave")
+	
 		while(self.num_exp > 0):
 			self.expose_dcamera[0].value = float(self.exp)
-			#self.event.set()
+			self.event.set()
 			self.indiclient.sendNewNumber(self.expose_dcamera)
 			filterclient.blobEvent.wait()
 			filterclient.blobEvent.clear()
+			
 			for blob in self.blob_dcamera:
 				fits = blob.getblobdata()
 				blobfile = io.BytesIO(fits)
 				#Set image prefix and directory path
 				self.complete_path = self.file_path+"/"+self.file_name+"1.fit"
+				
 				#Increment the images
 				if os.path.exists(self.complete_path): 
 					expand = 1
@@ -1381,49 +1026,27 @@ class ThreadClass(QtCore.QThread):
 							continue
 						else:
 							self.complete_path = new_file_name
+							break
+
 				with open(self.complete_path, "wb") as f:
 					f.write(blobfile.getvalue())
 
 				#Save the regions in case changed, Open new image in ds9 and overlay the saved region box
-				#os.system('xpaset -p ds9 regions save '+self.main.regionpath)
-				#os.system('xpaset -p ds9 fits '+str(self.complete_path)+' -zscale')
-				#os.system('xpaset -p ds9 regions load '+self.main.regionpath) #new
+				os.system('xpaset -p ds9 regions save '+self.main.regionpath)
+				os.system('xpaset -p ds9 fits '+str(self.complete_path)+' -zscale')
+				os.system('xpaset -p ds9 regions load '+self.main.regionpath) #new
+				
 				print("Image Saved: %s" %self.complete_path)
-			self.num_exp -= 1
-
-
-				#------------------------------------------------------------------
-				#Add the current exposure to the intensity graphic -- new
-				#------------------------------------------------------------------
-
-				#update coords.txt
-				# if there is a guidebox drawn, get the centroid of that as starting coords.  If not, just use the center of the image.
-				#if read_region(self.main.regionpath) != None:
-				#	print("There's a region!")
-				#	[xcenter2, ycenter2] = imexcentroid(self.complete_path, self.main.regionpath)
-					
-				#else:
-					#compute the center of the frame just taken
-				#	print("No region! "+str(read_region(self.main.regionpath)))
-				#	hdulist1 = pyfits.open(self.complete_path)
-				#	scidata1 = hdulist1[0].data
-				#	[xcenter2, ycenter2] = [int(scidata1.shape[0]/2),int(scidata1.shape[1]/2)]
-				#print(xcenter2,ycenter2)
-				# close and reopen coordinate file so it overwrites (is there a better way to do this?)
-				#self.main.coordsfile = open('/home/fhire/Desktop/GUI/Reference/coords.txt', 'w')
-				#self.main.coordsfile.write(str(xcenter2)+' '+str(ycenter2))
-				#self.main.coordsfile.close()
-
-				#f = int(float(self.get_phot(self.complete_path)))
-				#self.sig7.emit(QtCore.SIGNAL('newFluxPoint'),f) ##** isn't defined in main thread**	#-----------------------------------------------------------------------------------
+				print("Sending to centroid")
+				self.emit(QtCore.SIGNAL('GUIDE'),self.complete_path)
 
 			self.num_exp -= 1
 			self.sig6.emit(self.complete_path)
 			end = time.time()
 			print("Total time elapsed: %.2f" %(end-start))
 			QtGui.QApplication.processEvents()
+		print("End of exposure")
 		time.sleep(1)
-		#self.t.terminate()
 
 	#*There's got to be a better way to overwrite images in the main exposure method*
 	def take_exposure_delete(self):
@@ -1431,7 +1054,7 @@ class ThreadClass(QtCore.QThread):
 		print("Beginning exposure")
 		while(self.num_exp > 0):
 			self.expose_dcamera[0].value=float(self.exp)
-			#self.event.set()
+			self.event.set()
 			self.indiclient.sendNewNumber(self.expose_dcamera)
 			filterclient.blobEvent.wait()
 			filterclient.blobEvent.clear()
@@ -1441,18 +1064,7 @@ class ThreadClass(QtCore.QThread):
 				#Set image prefix and directory path
 				self.complete_path = self.file_path+"/"+self.file_name+"_temp.fit"
 				print(self.complete_path)
-				#Increment the images
-				#if os.path.exists(self.complete_path):
-				#	os.remove(self.complete_path) 
-				#	expand = 1
-				#	while True:
-				#		expand += 1
-				#		new_file_name = self.complete_path.split('1.fit')[0]+str(expand)+".fit"
-				#		print(new_file_name)
-				#		if os.path.exists(new_file_name):
-				#			continue
-				#		else:
-				#			self.complete_path = new_file_name
+
 				with open(self.complete_path, "wb") as f:
 					f.write(blobfile.getvalue())
 			self.num_exp -= 1
@@ -1477,7 +1089,8 @@ class ThreadClass(QtCore.QThread):
 
 				#f = int(float(self.get_phot(self.complete_path)))
 				#self.emit(QtCore.SIGNAL('newFluxPoint'),f) ##*** Isn't picked up in the main thread ***
-				#self.t.terminate()
+			self.sig6.emit(self.complete_path)
+		print("End of exposure")
 
 	#Separate exposure thread
 	def thread(self,exp,num_exp,file_path,file_name,saving):
@@ -1488,21 +1101,17 @@ class ThreadClass(QtCore.QThread):
 
 		if saving==True:
 			self.t=threading.Thread(target=self.take_exposure)
+			self.t.setDaemon(True)
 			print(self.t, self.t.is_alive())
 			self.t.start()
 		if saving==False:
 			self.t=threading.Thread(target=self.take_exposure_delete)
+			self.t.setDaemon(True)
 			print(self.t, self.t.is_alive())
 			self.t.start()
 
-
-	#Make complete_path available for MainUiClass -- (Doesn't work)
-	def path(self):
-		return self.complete_path
-
 	#Retrievable method by FilterThread -- status of exposure
 	def exp_busy(self):
-		#busy = False
 		if(self.expose_dcamera.s == filterclient.PyIndi.IPS_BUSY):
 			busy = True
 		elif(self.expose_dcamera.s == filterclient.PyIndi.IPS_OK):
@@ -1511,17 +1120,15 @@ class ThreadClass(QtCore.QThread):
 
 	#Update remaining time, progress bar and exposure count **Set to only update when exposing**
 	def time_start(self):
-		time.sleep(8)
+		time.sleep(10)
 		while 1:
-			#self.event.wait()
+			self.event.wait()
 			time.sleep(0.5)
-			#self.event.clear()
-			#start=True
+			self.event.clear()
 			start = True
 			self.sig7.emit(start)
 
 	def stop(self):
-		#self.p.terminate()
 		self.terminate()
 
 #=========================================================================================#
@@ -1633,7 +1240,6 @@ class Refractor(QtCore.QThread):
 		username = 'fhire'
 		password = 'WIROfhire17'
 		self.lnk.login(hostname,username,password)
-		#self.signal.emit(lnk)
 		end = time.time()
 		print('Refractor RPi connected. Time elapsed: '+str('%.2f'%(end-start))+" seconds")
 
@@ -1642,25 +1248,18 @@ class Refractor(QtCore.QThread):
 	def take_exposure(self,data):
 		exp = data[0]; fpath = data[1]; fname = data[2]
 		ms = exp*1000000 #time in microSec
-		#fname = 'refractor.jpg'
-		#print(fname)
-		#print(fpath)
 		sleep = exp + 2
-		#fname = 'refractor.jpg'
 
 		self.lnk.sendline('raspistill -ISO 900 -ss %s -br 80 -co 100 -o %s.jpg' %(ms,fname))
 		print("Taking image")
 		time.sleep(sleep)
 		print("Image taken")
 		self.lnk.sendline('scp %s.jpg fhire@10.212.212.80:%s' %(fname,fpath))
-		#print("fhire@10.212.212.80\'s password:")
 		i = self.lnk.expect('fhire@10.212.212.80\'s password:')
 		if i == 0:
 			print("Receiving image")
-			#print("Sending password")
 			self.lnk.sendline('WIROfhire17')
 			time.sleep(3)
-			#print("Password sent")
 			print("Refractor image received")
 		elif i == 1:
 			print("Got the key or connect timeout")
@@ -1703,6 +1302,8 @@ class stage_thread(QtCore.QThread):
 
 #Stage thread that watches/checks status
 class watchStageThread(QtCore.QThread):
+	signal = pyqtSignal('PyQt_PyObject')
+
 	def __init__(self,parent=None):
 		super(watchStageThread,self).__init__(parent)
 		self.stage = stage()
@@ -1717,8 +1318,8 @@ class watchStageThread(QtCore.QThread):
 				out += self.stage.ser.read(6)
 				if out == '\x44\x04\x01\x00\x01\x50':
 					print("HOME")
-					position = 1 #Home				
-					self.emit(QtCore.SIGNAL('STAGE'),position)
+					position = 1 #Home			
+					self.signal.emit(position)
 					QtGui.QApplication.processEvents()		
                     
 				elif out == '\x64\x04\x0e\x00\x81\x50':
@@ -1726,23 +1327,23 @@ class watchStageThread(QtCore.QThread):
 					if '\x00\xC0\xF3\x00' in move_out:
 						print("MIRROR")
 						position = 2 #Mirror
-						self.emit(QtCore.SIGNAL('STAGE'),position)
+						self.signal.emit(position)
 						QtGui.QApplication.processEvents()
 					elif '\x00\x40\xDB\x02' in move_out:
 						print("SPLITTER")
 						position = 3 #Splitter
-						self.emit(QtCore.SIGNAL('STAGE'),position)
+						self.signal.emit(position)
 						QtGui.QApplication.processEvents()
 					else:
 						print("[ERROR] Unknown position -- please send home")			
 						position = 4 #Unknown
-						self.emit(QtCore.SIGNAL('STAGE'),position)
+						self.signal.emit(position)
 						QtGui.QApplication.processEvents()
 						break
 				else:
 					print("[ERROR] Unknown position -- please send home")
 					position = 4 #Unknown
-					self.emit(QtCore.SIGNAL('STAGE'),position)
+					self.signal.emit(position)
 					QtGui.QApplication.processEvents()
 			time.sleep(0.5)
 
