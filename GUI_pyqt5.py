@@ -37,7 +37,8 @@ pg.setConfigOption('foreground', 'k')
 iraf.prcacheOff() 
 iraf.set(clobber="yes") 
 
-#os.system("x-terminal-emulator -e 'indiserver -v indi_qhycfw2_wheel indi_asi_ccd'") #Run IndiServer
+#Run IndiServer
+#indiserver = subprocess.Popen(["x-terminal-emulator","-e","indiserver -v indi_qhycfw2_wheel indi_asi_ccd"])
 
 #os.system('ds9 -geometry 636x360+447+87 &') #set up ds9 window
 
@@ -90,72 +91,6 @@ class motor_loop1(QtCore.QObject):
 		self.moving_forward = False
 		self.moving_reverse = False
 
-class motor_loop2(QtCore.QObject):
-	sig1 = pyqtSignal('PyQt_PyObject')
-	sig2 = pyqtSignal('PyQt_PyObject')
-	def __init__(self):
-		super(motor_loop2, self).__init__()
-		self.moving_forward = False
-		self.moving_reverse = False
-
-	def move_forward(self):
-		stepper2.set_direction(cw)
-		self.moving_forward = True
-		i = add = 0
-		while (self.moving_forward == True):
-			stepper2.step()
-			add += 1
-			self.sig1.emit(add)
-			QtGui.QApplication.processEvents()
-
-	def move_reverse(self):
-		stepper2.set_direction(ccw)
-		self.moving_reverse = True
-		i = add = 0
-		while (self.moving_reverse == True):
-			stepper2.step()
-			add += 1
-			self.sig2.emit(add)
-			QtGui.QApplication.processEvents()
-
-	def stop(self):
-		self.moving_forward = False
-		self.moving_reverse = False
-
-class motor_loop3(QtCore.QObject):
-	sig1 = pyqtSignal('PyQt_PyObject')
-	sig2 = pyqtSignal('PyQt_PyObject')
-	def __init__(self):
-		super(motor_loop3, self).__init__()
-		self.moving_forward = False
-		self.moving_reverse = False
-
-	def move_forward(self):
-		stepper3.set_direction(cw)
-		self.moving_forward = True
-		i = add = 0
-		while (self.moving_forward == True):
-			stepper3.step()
-			add += 1
-			self.sig1.emit(add)
-			QtGui.QApplication.processEvents()
-
-	def move_reverse(self):
-		stepper3.set_direction(ccw)
-		self.moving_reverse = True
-		i = add = 0
-		while (self.moving_reverse == True):
-			stepper3.step()
-			add += 1
-			self.sig2.emit(add)
-			QtGui.QApplication.processEvents()
-
-	def stop(self):
-		self.moving_forward = False
-		self.moving_reverse = False
-#===============================================================================================#
-#===============================================================================================#
-
 #===============================================================================================#
 # ------------------------------------ Main GUI Class ------------------------------------------
 #===============================================================================================#
@@ -169,6 +104,9 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.current_exp = 0
 
 		self.num_exp = self.num_exp_spn.value()
+		self.offset_complete = False
+
+		#self.setStyle(QtWidgets.QStyleFactory.create('GTK+'))
 
 		#Set up files:
 		self.regionpath = '/home/fhire/Desktop/GUI/Reference/regions.reg'
@@ -182,17 +120,11 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.threadclass = ThreadClass(self) #Client thread
 		self.threadclass.start()
 
-		#self.tempthread = TempThread(self.threadclass) #Temperature update thread
-		#self.tempthread.start()
-
 		self.filterthread_startup = FilterThread_Startup(self.threadclass) #Filter indicator thread
 		self.filterthread_startup.start()
 
 		self.refractorthread = Refractor()
 		self.refractorthread.start()
-
-		#self.configthread = ConfigThread(self.threadclass) #Config thread
-		#self.configthread.start()
 
 		#Stage move/watch threads: -- [Stage not available]
 		#self.moveStageThread = stage_thread()
@@ -210,21 +142,13 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		#self.motor_loop1 = motor_loop1()
 		#self.motor_loop1.moveToThread(self.simulThread1) # **** Not consistent ****
 
-		#self.simulThread2 = thread2()
-		#self.motor_loop2 = motor_loop2()
-		#self.motor_loop2.moveToThread(self.simulThread2)
-
-		#self.simulThread3 = thread3()
-		#self.motor_loop3 = motor_loop3()
-		#self.motor_loop3.moveToThread(self.simulThread3)
-
 #==========================
 # Terminal processes ======
 #==========================
 		#Terminal thread ***Inconsistent***
-		#self.term = termThread()
-		#self.EmittingStream = EmittingStream()
-		#self.EmittingStream.moveToThread(self.term)
+		self.term = termThread()
+		self.EmittingStream = EmittingStream()
+		self.EmittingStream.moveToThread(self.term)
 
 		#Install the custom output and error streams:
 		#** comment out stderr when troubleshooting/adding new code (if the GUI has an error preventing it from starting up, the error will not show while the stderr stream is being funneled into the GUI) **
@@ -235,31 +159,17 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 # Connections to emitted signals from other threads ====
 #=======================================================
 # Default values -------------------------------------
-
-		#self.threadclass.sig1.connect(self.setCooler) #Default cooler radiobutton
-		#self.threadclass.sig2.connect(self.setFrameType) #Default frame type radiobutton
 		self.threadclass.sig3.connect(self.setSlot) #Default filter slot
-		#self.threadclass.sig4.connect(self.setBit) #Default bit/pix type
 
 # Updating values -------------------------------------
 		#Update focus counts:
 		#self.motor_loop1.sig1.connect(self.cfocus_count_add)	
-		#self.motor_loop1.sig2.connect(self.cfocus_count_sub)	
-		#self.motor_loop2.sig1.connect(self.afocus1_count_add)	
-		#self.motor_loop2.sig2.connect(self.afocus1_count_sub)	
-		#self.motor_loop3.sig1.connect(self.afocus2_count_add)	
-		#self.motor_loop3.sig2.connect(self.afocus2_count_sub)		
-
-		#Update temperature label
-		#self.tempthread.sig1.connect(self.setTemp)
-
-		#Update cooler power
-		#self.tempthread.sig2.connect(self.setCPower)
+		#self.motor_loop1.sig2.connect(self.cfocus_count_sub)		
 
 		#Update filter indicator
 		self.filterthread_startup.signal.connect(self.setFilterInd)
 
-		self.watchStageThread.connect(self.stage_indicator) #Update stage indicator
+		#self.watchStageThread.connect(self.stage_indicator) #Update stage indicator
 
 # Etc signals -------------------------------------------
 		self.threadclass.sig5.connect(self.time_dec) #Abort exposure
@@ -267,29 +177,27 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.threadclass.sig6.connect(self.set_path) #Image path + last exposed image
 	
 		self.threadclass.sig7.connect(self.time_start) #Start exposure updates (ie: remaining time and # exposures taken)
+		self.threadclass.sig8.connect(self.mycen)
 		
 		#Claudius link
 		#self.claudiusthread.signal.connect(self.setClaudiuslnk)
 
-
 #=================================================
 # Define widgets + connect to functionalities ====
 #=================================================
-# Line edits ------------------------------------
-
 		#Line edits - set Directory/Prefix:
 		self.dir_inp.returnPressed.connect(self.setDirectory)
 		self.prefix_inp.returnPressed.connect(self.setPrefix)
 
-		self.claudius_command_lineEdit.returnPressed.connect(self.send_command) #Line edit - send command to Claudius
+		self.claudius_command_lineEdit.returnPressed.connect(lambda: self.send_command(False)) #Line edit - send command to Claudius
 
-# Buttons ------------------------------------
 		self.autosave_btn.setCheckable(True)
 		self.autosave_btn.setStyleSheet("background-color: #c9d1d1")
 		self.autosave_btn.setStyleSheet("QPushButton:checked {background-color: #95fef9}") #blue/ON
 		self.autosave_btn.setText("OFF")
 		self.autosave_btn.pressed.connect(lambda:self.autosaving())
 		self.autosave = False
+		self.autosave_btn.setToolTip("Set images to begin incrementing.")
 
 		self.autoguiding_btn.setCheckable(True)
 		self.autoguiding_btn.setStyleSheet("background-color: #c9d1d1")
@@ -297,21 +205,22 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.autoguiding_btn.setText("OFF")
 		self.autoguiding_btn.pressed.connect(lambda:self.autoguiding())
 		self.autoguide = False
+		self.autoguiding_btn.setToolTip("Set telescope to re-adjust after each exposure.\nMake sure you've sucessfully offset the target onto the fiber before beginning to autoguide.")
 
 		self.opends9_btn.pressed.connect(self.reopen_ds9)
 
 		#Radio buttons - stage:
-		self.home_rb.toggled.connect(self.moveLoop.home)
-		self.home_rb.toggled.connect(lambda: self.stage_indicator(0))
-		self.mirror_rb.toggled.connect(self.moveLoop.move_mirror)
-		self.mirror_rb.toggled.connect(lambda: self.stage_indicator(0))
-		self.splitter_rb.toggled.connect(self.moveLoop.move_splitter)
-		self.splitter_rb.toggled.connect(lambda: self.stage_indicator(0))
+		#self.home_rb.toggled.connect(self.moveLoop.home)
+		#self.home_rb.toggled.connect(lambda: self.stage_indicator(0))
+		#self.mirror_rb.toggled.connect(self.moveLoop.move_mirror)
+		#self.mirror_rb.toggled.connect(lambda: self.stage_indicator(0))
+		#self.splitter_rb.toggled.connect(self.moveLoop.move_splitter)
+		#self.splitter_rb.toggled.connect(lambda: self.stage_indicator(0))
 
 		self.exp_btn.pressed.connect(lambda:self.threadclass.thread(float(self.exp_inp.text()),
 			self.num_exp_spn.value(),
 			str(self.file_path),
-			str(self.file_name),self.autosave)) #Button - take exposure
+			str(self.file_name))) #Button - take exposure
 
 		self.exp_btn.pressed.connect(self.update_i) #Update the value of i for exposure updates
 		self.exp_btn.pressed.connect(lambda: self.get_exp('guiding camera'))
@@ -322,18 +231,13 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 
 		self.exp_btn_2.pressed.connect(self.refractor_exposure)
 		self.exp_btn_2.pressed.connect(lambda: self.get_exp('refractor camera'))
-
-# Radio Buttons ------------------------------------
-
-# Spin Boxes ------------------------------------
+		self.exp_btn_2.setToolTip("Refractor images saved to ~/Desktop")
 
 		self.num_exp_spn.valueChanged.connect(self.update_num) #Spinbox - Update number of exposures
 
 		#self.filter_cmb.currentIndexChanged.connect(self.filter_names) #Update filter combobox
 
-# Etc widgets & Defaults ------------------------------------
 		#Default - stage indicator:
-		#self.stage_ind.setText("BUSY")
 		self.stage_ind.setStyleSheet("background-color: orange;\n""border: orange;")
 		
 		#Default exposure values:
@@ -342,10 +246,8 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.remaining_lbl2.setText("0.0s")
 		self.exp_inp.setPlaceholderText("0")
 		self.exp_inp.returnPressed.connect(self.clear_exp)
-		#self.exp_inp.textEdited.connect(lambda: self.get_exp('guiding camera'))
 		self.currentexp_lbl2.setText("0/0")
 
-		#self.exp_inp_2.textEdited.connect(lambda: self.get_exp('refractor camera'))
 		self.exp_inp_2.setPlaceholderText("0")
 
 		#Default file_path + file_name:
@@ -353,6 +255,9 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.dir_inp.setPlaceholderText(self.file_path)
 		self.file_name = "GAMimage"
 		self.prefix_inp.setPlaceholderText(self.file_name.split(".fit")[0]+"XXX.fit")
+
+		self.offset_btn.pressed.connect(lambda: self.mycen(True))
+		self.offset_btn.setToolTip("Move telescope to place target on fiber.")
 
 #==================================
 # Methods to update widgets =======
@@ -364,19 +269,22 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		if self.autosave_btn.isChecked():
 			self.autosave_btn.setText("OFF")
 			self.autosave = False
+			print("Autosaving turned OFF")
 		else:
 			self.autosave_btn.setText("ON")
 			self.autosave = True
+			print("Autosaving turned ON")
 
 	def autoguiding(self):
 		if self.autoguiding_btn.isChecked():
 			self.autoguiding_btn.setText("OFF")
 			self.autoguide = False
+			print("Autoguiding turned OFF")
 		else:
 			self.autoguiding_btn.setText("ON")
 			self.autoguide = True
+			print("Autoguiding turned ON")
 	
-
 	def setClaudiuslnk(self,lnk):
 		self.claudiuslnk = lnk
 	
@@ -406,12 +314,7 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.img_name = self.complete_path.split("/")[-1]
 		self.last_exposed_2.setText(self.complete_path)
 
-	#Open the image selected from the list in ds9 & overlay saved region box:
-	def open_ds9(self):
-		os.system('xpaset -p ds9 fits ' + str(self.ds9_path)+' zscale')
-		os.system('xpaset -p ds9 regions load '+self.main.regionpath) 
-
-	#Reopen a ds9 window if accidentally closed: ** Need to check if it works **
+	#Reopen a ds9 window if accidentally closed
 	def reopen_ds9(self):
 		os.system('ds9 -geometry 636x360+447+87 &')
 
@@ -422,10 +325,10 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		print(filter_dict[self.filter_cmb.currentIndex])
 
 	#Centroiding method - autoguiding:
-	def mycen(self,imgpath):
+	def mycen(self,offset):
 		#imgpath=self.complete_path
-		#imgpath='/home/fhire/Desktop/GUI/GAMimage71.fit' #temp path for testing
-		print(imgpath) #does imgpath not work?
+		imgpath='/home/fhire/Desktop/GUI/GAMimage71.fit' #temp path for testing
+		print(imgpath) 
 
 		#position of the optical fiber
 		os.system("xpaset -p ds9 regions command '{point 1065 360 # point=x 20 color=red}'")
@@ -451,7 +354,30 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		print(xoffset+" "+yoffset)
 
 		self.move_offset = (xoffset+";"+yoffset)
-		self.send_command2()
+		self.send_command(True)
+
+		#Offset target to fiber location to begin autoguiding
+		if offset == True:
+			#move regionbox with target **Should this be automatic like this?**
+			wfile = open(self.regionpath, 'r')
+			lines = wfile.readlines()
+			for item in lines:
+				if item.split('(')[0] == 'box':
+					boxline = item.split('(')[1].split(')')[0]
+					dim = boxline.split(',')
+					for i in range(len(dim)):
+						dim[i] = int(float(dim[i]))
+					dim[0] -= xdiff
+					dim[1] -= ydiff
+
+			new = "box(%.7s,%.7s,%.7s,%.7s,%s)\n" %(dim[0],dim[1],dim[2],dim[3],dim[4])
+			lines = [new if "box" in x else x for x in lines]
+
+			wfile = open(self.regionpath, 'w')
+			wfile.writelines(lines)
+			wfile.close()				
+
+			self.offset_complete = True
 
 	#Updates i for exposure updates:
 	def update_i(self):
@@ -461,7 +387,6 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 	def update_num(self):
 		self.num_exp = self.num_exp_spn.value()
 
-#-----------------------** IN THE WORKS **------------------------------------------#
 	#Events when window is closed -- replace with a shutdown button?
 	def closeEvent(self,event):
 		reply = QtWidgets.QMessageBox.question(self,'Window Close','Are you sure you want to close the window?',
@@ -470,15 +395,14 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 			self.logfile.close() #new
 			self.photlog.close() #new
 			self.threadclass.stop()
-			#self.tempthread.stop()
 			self.filterthread_startup.stop()
-			#self.configthread.stop()
 			#self.moveStageThread.stop()
 			self.refractorthread.stop()	
+		
+			#print(indiserver.poll())
+			#indiserver.terminate() #Doesn't work :|
 
-			#self.claudiuslnk.logout() #new
-		#	self.threadclass.cooler_off
-			#self.cooler_rdb_off_3.setChecked(True)
+			#self.claudiuslnk.logout() 
 		#	proc.send_signal(signal.SIGINT)
 			event.accept()
 			print('Window Closed')
@@ -486,25 +410,18 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 			event.ignore()
 
 	#Send command to Claudius via subprocess -- (Doesn't work -- try pxssh) **I think it does work, but double check**
-	def send_command(self):
-		command = str(self.claudius_command_lineEdit.text())
-		self.claudius_command_lineEdit.clear()
-		print("<b>observer@claudius: </b>"+command)
+	def send_command(self,guiding):
+		if guiding == False:
+			command = str(self.claudius_command_lineEdit.text())
+			self.claudius_command_lineEdit.clear()
+		elif guiding == True:
+			command = self.move_offset
+
+		print("<span style=\"color:#0000ff;\"><b>observer@claudius: </b>"+command+"</span>")
 		
 		self.claudiuslnk.sendline(command) 
 		self.claudiuslnk.prompt()
-		print(self.claudiuslnk.before) 
-
-	#Send command - autoguiding
-	def send_command2(self):
-		command = self.move_offset
-		#self.claudius_command_lineEdit.clear()
-		print("<span style=\"color:#0000ff;\"><b>observer@claudius: </b>"+command+"</span>")
-		
-		#self.claudiuslnk.sendline(command)
-		#self.claudiuslnk.prompt()
-		#print("<span style=\"color:#0000ff;\">"+self.claudiuslnk.before+"</span>")
- 	
+		print("<span style=\"color:#0000ff;\">"+self.claudiuslnk.before+"</span>") 	
 
 	# (Add a check to make sure the directory exists. If not, prompt user to create new one (Doesn't work).)
 	def setDirectory(self):
@@ -638,8 +555,8 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 # ------------------------------------ Client Thread ------------------------------------------
 #===============================================================================================#
 class ThreadClass(QtCore.QThread): 
-	sig = [pyqtSignal(int) for i in range(6)]	
-	sig1,sig2,sig3,sig4,sig5,sig7 = sig[0:]	
+	sig = [pyqtSignal(int) for i in range(7)]	
+	sig1,sig2,sig3,sig4,sig5,sig7,sig8 = sig[0:]	
 	sig6 = pyqtSignal(str)	
 	def __init__(self,main):
 		self.main = main
@@ -675,13 +592,9 @@ class ThreadClass(QtCore.QThread):
 		#Connect to filterwheel
 		time.sleep(0.5)
 		self.dwheel = self.indiclient.getDevice(self.wheel)
-		while not(self.dwheel):
-			self.dwheel = self.indiclient.getDevice(self.wheel)
 
 		time.sleep(0.5)
 		self.connect_dwheel = self.dwheel.getSwitch("CONNECTION")
-		while not(self.connect_dwheel):
-			self.connect_dwheel = self.dwheel.getSwitch("CONNECTION")
 
 		time.sleep(0.5)
 		while not(self.dwheel.isConnected()): 
@@ -699,21 +612,15 @@ class ThreadClass(QtCore.QThread):
 
 		#Connect FILTER_SLOT - filter wheel's current slot number
 		self.slot_dwheel = self.dwheel.getNumber("FILTER_SLOT")
-		while not(self.slot_dwheel):
-			self.slot_dwheel = self.dwheel.getNumber("FILTER_SLOT")
-		if(self.slot_dwheel):	
-			print("property setup: FILTER_SLOT")
+		if not(self.slot_dwheel):	
+			print("property setup ERROR: FILTER_SLOT")
 
 		#Connect to camera
 		time.sleep(0.5)
 		self.dcamera = self.indiclient.getDevice(self.camera)
-		while not(self.dcamera):
-			self.dcamera = self.indiclient.getDevice(self.camera)
 
 		time.sleep(0.5)
 		self.connect_dcamera = self.dcamera.getSwitch("CONNECTION")
-		while not(self.connect_dcamera):
-			self.connect_dcamera = self.dcamera.getSwitch("CONNECTION")
 
 		time.sleep(1)
 		if not(self.dcamera.isConnected()): 
@@ -730,92 +637,68 @@ class ThreadClass(QtCore.QThread):
 
 		#Connect CCD_COOLER - toggle cooler
 		self.cool_dcamera = self.dcamera.getSwitch("CCD_COOLER")
-		while not(self.cool_dcamera):
-			self.cool_dcamera = self.dcamera.getSwitch("CCD_COOLER")
-		if(self.cool_dcamera):	
-			print("property setup: CCD_COOLER")
+		if not(self.cool_dcamera):	
+			print("property setup ERROR: CCD_COOLER")
 
 		#Connect CCD_CONTROLS - ?
 		self.controls_dcamera = self.dcamera.getNumber("CCD_CONTROLS")
-		while not(self.controls_dcamera):
-			self.controls_dcamera = self.dcamera.getNumber("CCD_CONTROLS")
-		if(self.controls_dcamera):	
-			print("property setup: CCD_CONTROLS")
+		if not(self.controls_dcamera):	
+			print("property setup ERROR: CCD_CONTROLS")
 
 		#Connect CCD_BINNING - horizontal/vertical binning
 		self.binning_dcamera = self.dcamera.getNumber("CCD_BINNING")
-		while not(self.binning_dcamera):
-			self.binning_dcamera = self.dcamera.getNumber("CCD_BINNING")
-		if(self.binning_dcamera):
-			print("property setup: CCD_BINNING")
+		if not(self.binning_dcamera):
+			print("property setup ERROR: CCD_BINNING")
 
 		#Connect CCD_FRAME_TYPE - light,bias,dark,flat
 		self.frametype_dcamera = self.dcamera.getSwitch("CCD_FRAME_TYPE")
-		while not(self.frametype_dcamera):
-			self.frametype_dcamera = self.dcamera.getSwitch("CCD_FRAME_TYPE")
-		if(self.frametype_dcamera):
-			print("property setup: CCD_FRAME_TYPE")
+		if not(self.frametype_dcamera):
+			print("property setup ERROR: CCD_FRAME_TYPE")
 
 		#Connect CCD_FRAME - frame dimensions
 		self.frame_dcamera = self.dcamera.getNumber("CCD_FRAME")
-		while not(self.frame_dcamera):
-			self.frame_dcamera = self.dcamera.getNumber("CCD_FRAME")
-		if(self.frame_dcamera):
-			print("property setup: CCD_FRAME")
+		if not(self.frame_dcamera):
+			print("property setup ERROR: CCD_FRAME")
 
 		#Connect CCD_TEMPERATURE - chip temp. in Celsius
 		self.temp_dcamera = self.dcamera.getNumber("CCD_TEMPERATURE")
-		while not(self.temp_dcamera):
-			self.temp_dcamera = self.dcamera.getNumber("CCD_TEMPERATURE")
-		if(self.temp_dcamera):	
-			print("property setup: CCD_TEMPERATURE")
+		if not(self.temp_dcamera):	
+			print("property setup ERROR: CCD_TEMPERATURE")
 
 		#Connect CCD_EXPOSURE - seconds of exposure
-		self.expose_dcamera = self.dcamera.getNumber("CCD_EXPOSURE")
-		while not(self.expose_dcamera):
-			self.expose_dcamera = self.dcamera.getNumber("CCD_EXPOSURE") #def getNumber(self, name) in BaseDevice
-		if(self.expose_dcamera):	
-			print("property setup: CCD_EXPOSURE")	
+		self.expose_dcamera = self.dcamera.getNumber("CCD_EXPOSURE")#def getNumber(self, name) in BaseDevice
+		if not(self.expose_dcamera):	
+			print("property setup ERROR: CCD_EXPOSURE")	
 
 		#Connect CCD1 - binary fits data encoded in base64
 		#Inform indi server to receive the "CCD1" blob from this device
 		self.indiclient.setBLOBMode(PyIndi.B_ALSO,self.camera,"CCD1")
 		time.sleep(0.5)
 		self.blob_dcamera = self.dcamera.getBLOB("CCD1")
-		while not(self.blob_dcamera):
-			self.blob_dcamera = self.dcamera.getBLOB("CCD1")
-		if(self.blob_dcamera):
-			print("property setup: CCD1 -- BLOB")
+		if not(self.blob_dcamera):
+			print("property setup ERROR: CCD1 -- BLOB")
 
 		#Connect CCD_COOLER_POWER - percentage cooler power utilized
 		self.cpower_dcamera = self.dcamera.getNumber("CCD_COOLER_POWER")
-		while not(self.cpower_dcamera):
-			self.cpower_dcamera = self.dcamera.getNumber("CCD_COOLER_POWER")
-		if(self.cpower_dcamera):
-			print("property setup: CCD_COOLER_POWER")
+		if not(self.cpower_dcamera):
+			print("property setup ERROR: CCD_COOLER_POWER")
 
 		#Connect CCD_ABORT_EXPOSURE - abort CCD exposure
-		self.abort_dcamera = self.dcamera.getSwitch("CCD_ABORT_EXPOSURE")
-		#while not(self.abort_dcamera):
-		#	self.abort_dcamera = self.dcamera.getSwitch("CCD_ABORT_EXPOSURE")	
-		if(self.abort_dcamera):
-			print("property setup: CCD_ABORT_EXPOSURE")
+		self.abort_dcamera = self.dcamera.getSwitch("CCD_ABORT_EXPOSURE")	
+		if not(self.abort_dcamera):
+			print("property setup ERROR: CCD_ABORT_EXPOSURE")
 
 		#Connect CCD_VIDEO_FORMAT - ?
 		#**How come the bit settings are tied to the CCD video property?**
 		self.bit_dcamera = self.dcamera.getSwitch("CCD_VIDEO_FORMAT")
-		#while not(self.bit_dcamera):
-		#	self.bit_dcamera = self.dcamera.getSwitch("CCD_VIDEO_FORMAT")
-		if(self.bit_dcamera):
-			print("property setup: CCD_VIDEO_FORMAT")
+		if not(self.bit_dcamera):
+			print("property setup ERROR: CCD_VIDEO_FORMAT")
 		
 		#set up thread for creating the blob
 		filterclient.blobEvent = threading.Event() 
-		#filterclient.blobEvent.setDaemon(True)
 		filterclient.blobEvent.clear()
 
 		self.event = threading.Event()
-		#self.event.setDaemon(True)
 		self.event.clear()
 
 		time.sleep(1)
@@ -1001,7 +884,7 @@ class ThreadClass(QtCore.QThread):
 	#Take exposure 
 	def take_exposure(self):
 		start = time.time()
-		print("Beginning exposure: autosave")
+		print("Beginning exposure")
 	
 		while(self.num_exp > 0):
 			self.expose_dcamera[0].value = float(self.exp)
@@ -1013,102 +896,61 @@ class ThreadClass(QtCore.QThread):
 			for blob in self.blob_dcamera:
 				fits = blob.getblobdata()
 				blobfile = io.BytesIO(fits)
+
 				#Set image prefix and directory path
 				self.complete_path = self.file_path+"/"+self.file_name+"1.fit"
-				
+
 				#Increment the images
-				if os.path.exists(self.complete_path): 
-					expand = 1
-					while True:
-						expand += 1
-						new_file_name = self.complete_path.split('1.fit')[0]+str(expand)+".fit"
-						if os.path.exists(new_file_name):
-							continue
-						else:
-							self.complete_path = new_file_name
-							break
+				if self.main.autosave == True:
+					if os.path.exists(self.complete_path): 
+						expand = 1
+						while True:
+							expand += 1
+							new_file_name = self.complete_path.split('1.fit')[0]+str(expand)+".fit"
+							if os.path.exists(new_file_name):
+								continue
+							else:
+								self.complete_path = new_file_name
+								break
+				elif self.main.autosave == False:
+					self.complete_path = '/home/fhire/Desktop/GAMimage_temp.fit'
 
 				with open(self.complete_path, "wb") as f:
 					f.write(blobfile.getvalue())
 
-				#Save the regions in case changed, Open new image in ds9 and overlay the saved region box
-				os.system('xpaset -p ds9 regions save '+self.main.regionpath)
+				#Save the regions in case changed, Open new image in ds9 and overlay the saved region box **Does it replace the old image?** #Load moved region box if just completed an offset
+				if self.main.offset_complete == False:
+					os.system('xpaset -p ds9 regions save '+self.main.regionpath)
 				os.system('xpaset -p ds9 fits '+str(self.complete_path)+' -zscale')
-				os.system('xpaset -p ds9 regions load '+self.main.regionpath) #new
-				
-				print("Image Saved: %s" %self.complete_path)
-				print("Sending to centroid")
-				self.emit(QtCore.SIGNAL('GUIDE'),self.complete_path)
+				os.system('xpaset -p ds9 zoom to fit')
+				os.system('xpaset -p ds9 regions load '+self.main.regionpath)
+				self.main.offset_complete = False
 
+			print("Image Saved: %s" %self.complete_path)
 			self.num_exp -= 1
 			self.sig6.emit(self.complete_path)
 			end = time.time()
 			print("Total time elapsed: %.2f" %(end-start))
 			QtGui.QApplication.processEvents()
+
+			if self.main.autoguide == True:
+				print("Sending to centroid")
+				self.sig8.emit(False)
+
 		print("End of exposure")
 		time.sleep(1)
 
-	#*There's got to be a better way to overwrite images in the main exposure method*
-	def take_exposure_delete(self):
-		start = time.time()
-		print("Beginning exposure")
-		while(self.num_exp > 0):
-			self.expose_dcamera[0].value=float(self.exp)
-			self.event.set()
-			self.indiclient.sendNewNumber(self.expose_dcamera)
-			filterclient.blobEvent.wait()
-			filterclient.blobEvent.clear()
-			for blob in self.blob_dcamera:
-				fits=blob.getblobdata()
-				blobfile = io.BytesIO(fits)
-				#Set image prefix and directory path
-				self.complete_path = self.file_path+"/"+self.file_name+"_temp.fit"
-				print(self.complete_path)
-
-				with open(self.complete_path, "wb") as f:
-					f.write(blobfile.getvalue())
-			self.num_exp -= 1
-
-				#update coords.txt
-				# if there is a guidebox drawn, get the centroid of that as starting coords.  If not, just use the center of the image.
-				#if read_region(self.main.regionpath) != None:
-				#	print("There's a region!")
-				#	[xcenter2, ycenter2] = imexcentroid(self.complete_path, self.main.regionpath)
-					
-				#else:
-					#compute the center of the frame just taken
-				#	print("No region! "+str(read_region(self.main.regionpath)))
-				#	hdulist1 = pyfits.open(self.complete_path)
-				#	scidata1 = hdulist1[0].data
-				#	[xcenter2, ycenter2] = [int(scidata1.shape[0]/2),int(scidata1.shape[1]/2)]
-				#print(xcenter2,ycenter2)
-				# close and reopen coordinate file so it overwrites (is there a better way to do this?)
-				#self.main.coordsfile = open('/home/fhire/Desktop/GUI/Reference/coords.txt', 'w')
-				#self.main.coordsfile.write(str(xcenter2)+' '+str(ycenter2))
-				#self.main.coordsfile.close()
-
-				#f = int(float(self.get_phot(self.complete_path)))
-				#self.emit(QtCore.SIGNAL('newFluxPoint'),f) ##*** Isn't picked up in the main thread ***
-			self.sig6.emit(self.complete_path)
-		print("End of exposure")
-
 	#Separate exposure thread
-	def thread(self,exp,num_exp,file_path,file_name,saving):
+	def thread(self,exp,num_exp,file_path,file_name):
 		self.num_exp=num_exp
 		self.file_path=file_path
 		self.file_name=file_name
 		self.exp=exp
 
-		if saving==True:
-			self.t=threading.Thread(target=self.take_exposure)
-			self.t.setDaemon(True)
-			print(self.t, self.t.is_alive())
-			self.t.start()
-		if saving==False:
-			self.t=threading.Thread(target=self.take_exposure_delete)
-			self.t.setDaemon(True)
-			print(self.t, self.t.is_alive())
-			self.t.start()
+		self.t=threading.Thread(target=self.take_exposure)
+		self.t.setDaemon(True)
+		print(self.t, self.t.is_alive())
+		self.t.start()
 
 	#Retrievable method by FilterThread -- status of exposure
 	def exp_busy(self):
@@ -1121,6 +963,7 @@ class ThreadClass(QtCore.QThread):
 	#Update remaining time, progress bar and exposure count **Set to only update when exposing**
 	def time_start(self):
 		time.sleep(10)
+		print("Ready to begin taking exposures")
 		while 1:
 			self.event.wait()
 			time.sleep(0.5)
@@ -1138,25 +981,6 @@ class ThreadClass(QtCore.QThread):
 # ---------------------------------- Other Threads ---------------------------------------
 #=========================================================================================#
 
-#Continuously update temperature and emit it to MainUiClass
-class TempThread(QtCore.QThread):
-	sig1 = pyqtSignal('PyQt_PyObject')
-	sig2 = pyqtSignal('PyQt_PyObject')
-	def __init__(self,client):
-		self.client = client
-		super(TempThread,self).__init__(client)
-	def run(self):
-		time.sleep(10) #*You could set this up better. Maybe with a signal at end of loading?*
-		while 1:
-			temp = self.client.get_temp()
-			self.sig1.emit(temp)
-			cpower = self.client.get_cooler_power()
-			self.sig2.emit(cpower)
-			time.sleep(2)
-
-	def stop(self):
-		self.terminate()
-
 #For use only once at startup -- updates filter indicator and exposure countdowns
 class FilterThread_Startup(QtCore.QThread):
 	signal = pyqtSignal('PyQt_PyObject')
@@ -1169,41 +993,6 @@ class FilterThread_Startup(QtCore.QThread):
 			busy = self.client.filter_busy()
 			self.signal.emit(busy)
 			time.sleep(0.5)
-	def stop(self):
-		self.terminate()
-
-class ConfigThread(QtCore.QThread):
-	sig=[pyqtSignal(int) for i in range(9)]	
-	sig1,sig2,sig3,sig4,sig5,sig6,sig7,sig8,sig9=sig[0:]
-	def __init__(self,client):
-		self.client = client
-		super(ConfigThread,self).__init__(client)
-	def run(self):
-		time.sleep(10)
-		while 1:
-			#Set spinbutton default values -- send current value to MainUiClass
-			band = self.client.controls_dcamera[2].value
-			self.sig1.emit(band)
-			xbin = self.client.binning_dcamera[0].value
-			self.sig2.emit(xbin)
-			ybin = self.client.binning_dcamera[1].value
-			self.sig3.emit(ybin)
-			offset = self.client.controls_dcamera[1].value
-			self.sig4.emit(offset)
-			gain = self.client.controls_dcamera[0].value
-			self.sig5.emit(gain)
-	
-			#Set default frame size placeholder text -- send current value to MainUiClass
-			xposition = self.client.frame_dcamera[0].value
-			self.sig6.emit(xposition)
-			yposition = self.client.frame_dcamera[1].value
-			self.sig7.emit(yposition)
-			xframe = self.client.frame_dcamera[2].value
-			self.sig8.emit(xframe)
-			yframe = self.client.frame_dcamera[3].value
-			self.sig9.emit(yframe)
-			time.sleep(0.5)
-
 	def stop(self):
 		self.terminate()
 
@@ -1233,7 +1022,7 @@ class Refractor(QtCore.QThread):
 	def __init__(self,parent=None):
 		super(Refractor,self).__init__(parent)
 	def run(self):
-		time.sleep(1)
+		time.sleep(5)
 		start = time.time()
 		self.lnk = pxssh.pxssh()
 		hostname = '10.212.212.46'
@@ -1246,7 +1035,9 @@ class Refractor(QtCore.QThread):
 		self.signal.connect(self.take_exposure)
 
 	def take_exposure(self,data):
-		exp = data[0]; fpath = data[1]; fname = data[2]
+		exp = data[0]; #fpath = data[1]; fname = data[2]
+		fpath = '/home/fhire/Desktop/'
+		fname = 'RefractorImage_temp'
 		ms = exp*1000000 #time in microSec
 		sleep = exp + 2
 
@@ -1272,13 +1063,13 @@ class Refractor(QtCore.QThread):
 
 #(Maybe you should define all threads like this? Might be cleaner.)
 
-'''
+
 #Define focus threads and execute
 class thread1(QtCore.QThread):
 	def run(self):
 		self.exec_()
 
-
+'''
 class thread2(QtCore.QThread):
         def run(self):
                 self.exec_()
@@ -1287,6 +1078,7 @@ class thread2(QtCore.QThread):
 class thread3(QtCore.QThread):
         def run(self):
                 self.exec_()
+'''
 
 #Terminal output to textBox -- thread
 class termThread(QtCore.QThread):
@@ -1298,7 +1090,7 @@ class termThread(QtCore.QThread):
 class stage_thread(QtCore.QThread):  
 	def run(self):
 		self.exec_()  
-'''
+
 
 #Stage thread that watches/checks status
 class watchStageThread(QtCore.QThread):
