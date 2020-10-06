@@ -11,6 +11,9 @@ from PyQt5.QtCore import QThread,pyqtSignal
 
 import fhireGUI11 #imports PyQt design
 import filterclient #imports basic indiclient loop
+import vacuumwindow #imports PyQt vacuum window
+import adcwindow #imports PyQt ADC testing window
+import zwocamerawindow #imports PyQt ZWO camera settings window
 
 import sys,os,io,time,threading,PyIndi,time,datetime,struct,subprocess,signal
 import astropy.io.fits as pyfits
@@ -47,6 +50,21 @@ class EmittingStream(QtCore.QObject):
 	textWritten = QtCore.pyqtSignal(str) 
 	def write(self,text):
 		self.textWritten.emit(str(text))
+
+class VacuumWindow(QtGui.QMainWindow, vacuumwindow.Ui_VacuumWindow):
+	def __init__(self, parent=None):
+		super(VacuumWindow,self).__init__(parent)
+		self.setupUi(self)
+
+class ZWOCameraWindow(QtGui.QMainWindow, zwocamerawindow.Ui_ZWOcamera):
+	def __init__(self, parent=None):
+		super(ZWOCameraWindow,self).__init__(parent)
+		self.setupUi(self)
+
+class ADCTestingWindow(QtGui.QMainWindow, adcwindow.Ui_ADC):
+	def __init__(self, parent=None):
+		super(ADCTestingWindow,self).__init__(parent)
+		self.setupUi(self)
 
 #=======================================================================================#
 # --------------------------- STEPPER MOTOR FUNCTIONS ----- Finished -------------------
@@ -107,6 +125,10 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.offset_complete = False
 
 		#self.setStyle(QtWidgets.QStyleFactory.create('GTK+'))
+
+		self.vacuumwindow = VacuumWindow()
+		self.adcwindow = ADCTestingWindow()
+		self.camerawindow = ZWOCameraWindow()
 
 		#Set up files:
 		self.regionpath = '/home/fhire/Desktop/GUI/Reference/regions.reg'
@@ -217,6 +239,10 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 		#self.splitter_rb.toggled.connect(self.moveLoop.move_splitter)
 		#self.splitter_rb.toggled.connect(lambda: self.stage_indicator(0))
 
+		self.vacuum_btn.pressed.connect(lambda: self.vacuumwindow.show())
+		self.guidingCam_btn.pressed.connect(lambda: self.camerawindow.show())
+		self.ADC_btn.pressed.connect(lambda: self.adcwindow.show())
+
 		self.exp_btn.pressed.connect(lambda:self.threadclass.thread(float(self.exp_inp.text()),
 			self.num_exp_spn.value(),
 			str(self.file_path),
@@ -262,6 +288,11 @@ class MainUiClass(QtGui.QMainWindow, fhireGUI11.Ui_MainWindow):
 #==================================
 # Methods to update widgets =======
 #==================================
+	def vacuumwindow(self):
+		self.w = VacuumWindow()
+		self.w.show()
+		#self.hide()
+
 	def refractor_exposure(self):
 		self.refractorthread.signal.emit([float(self.exp_inp_2.text()),str(self.file_path),str(self.file_name)])
 	
