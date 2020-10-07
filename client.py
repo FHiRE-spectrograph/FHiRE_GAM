@@ -1,8 +1,9 @@
 import logging, time, sys, threading
 import PyIndi
-from PyQt5 import QtGui,QtCore
-#inherits from module PyIndi.BaseClient class
+from PyQt5 import QtCore,QtWidgets
+from PyQt5.QtCore import QThread,pyqtSignal
 
+#inherits from module PyIndi.BaseClient class
 class IndiClient(PyIndi.BaseClient):
 #CLASS IndiClient FUNCTIONS:
 	def __init__(self):
@@ -38,10 +39,10 @@ class IndiClient(PyIndi.BaseClient):
 # ------------------------------------ Client Thread ------------------------------------------
 #===============================================================================================#
 class ThreadClass(QtCore.QThread): 
-	#sig = [pyqtSignal(int) for i in range(7)]	
-	#sig1,sig2,sig3,sig4,sig5,sig7,sig8 = sig[0:]	
-	sig1,sig3,sig5,sig7,sig8 = pyqtSignal(int)
+	sig = [pyqtSignal(int) for i in range(4)]	
+	sig3,sig5,sig7,sig8 = sig[0:]	
 	sig6 = pyqtSignal(str)	
+	sig1 = pyqtSignal('PyQt_PyObject')
 	def __init__(self,main):
 		self.main = main
 		super(ThreadClass,self).__init__(main)
@@ -62,8 +63,6 @@ class ThreadClass(QtCore.QThread):
 #==================================================
 # Connect to server, devices, indi properties =====
 #==================================================
-
-#(Do you want the extra notifications? Print statements can be uncommented. Vis versa)
 	def run(self):
 		#Connect to server
 		start = time.time()
@@ -124,7 +123,7 @@ class ThreadClass(QtCore.QThread):
 		if not(self.cool_dcamera):	
 			print("property setup ERROR: CCD_COOLER")
 
-		#Connect CCD_CONTROLS - ?
+		#Connect CCD_CONTROLS - offset, gain, bandwidth, binning
 		self.controls_dcamera = self.dcamera.getNumber("CCD_CONTROLS")
 		if not(self.controls_dcamera):	
 			print("property setup ERROR: CCD_CONTROLS")
@@ -150,7 +149,7 @@ class ThreadClass(QtCore.QThread):
 			print("property setup ERROR: CCD_TEMPERATURE")
 
 		#Connect CCD_EXPOSURE - seconds of exposure
-		self.expose_dcamera = self.dcamera.getNumber("CCD_EXPOSURE")#def getNumber(self, name) in BaseDevice
+		self.expose_dcamera = self.dcamera.getNumber("CCD_EXPOSURE")
 		if not(self.expose_dcamera):	
 			print("property setup ERROR: CCD_EXPOSURE")	
 
@@ -172,8 +171,7 @@ class ThreadClass(QtCore.QThread):
 		if not(self.abort_dcamera):
 			print("property setup ERROR: CCD_ABORT_EXPOSURE")
 
-		#Connect CCD_VIDEO_FORMAT - ?
-		#**How come the bit settings are tied to the CCD video property?**
+		#Connect CCD_VIDEO_FORMAT - change bits per pixel
 		self.bit_dcamera = self.dcamera.getSwitch("CCD_VIDEO_FORMAT")
 		if not(self.bit_dcamera):
 			print("property setup ERROR: CCD_VIDEO_FORMAT")
@@ -186,40 +184,34 @@ class ThreadClass(QtCore.QThread):
 		self.event.clear()
 
 		time.sleep(1)
-		end=time.time()
+		end = time.time()
 		print ("*** Connection process complete ***"+"\nTime elapsed: "+str('%.2f'%(end-start))+" seconds")
 
 #========================================================
 # Receive default properties and send to MainUiClass ====
 #========================================================
 		
-		#Set cooler radiobutton default -- send current value to MainUiClass
-		if(self.cool_dcamera[0].s == PyIndi.ISS_ON):
-			cool = 0
-		if(self.cool_dcamera[1].s == PyIndi.ISS_ON):
-			cool = 1
-		#self.cooler_off()
-		#cool = 0 if self.cool_dcamera[0].s == PyIndi.ISS_ON else 1
-		#self.sig1.emit(cool)
+		#Set cooler radiobutton default 
+		cool = 0 if self.cool_dcamera[0].s == PyIndi.ISS_ON else 1
 
-		#Set frame type radiobutton default -- send current value to MainUiClass	
+		#Set frame type radiobutton default 
 		frametype = {self.frametype_dcamera[0].s:0, self.frametype_dcamera[1].s:1, 
 				self.frametype_dcamera[2].s:2, self.frametype_dcamera[3].s:3}
 		for x in frametype:
 			if x == PyIndi.ISS_ON:
 				typ = frametype[x]
-		#self.sig2.emit(typ)
 	
-		#Set default filter slot default value -- send current value to MainUiClass
+		#Set default filter slot default value 
 		slot = self.slot_dwheel[0].value-1
-		self.sig3.emit(slot)	
 
-		#Set default bit value -- send current value to MainUiClass
+		#Set default bit value 
 		if(self.bit_dcamera[0].s == PyIndi.ISS_ON):
-			bit = 0
-		if(self.bit_dcamera[1].s == PyIndi.ISS_ON):
-			bit = 1
-		#self.sig4.emit(bit)	
+			bit = 8
+		elif(self.bit_dcamera[1].s == PyIndi.ISS_ON):
+			bit = 16
+
+		#Send current values to MainUiClass
+		self.sig3.emit(slot)
 		self.sig1.emit([cool,typ,bit])			
 
 		while True:
@@ -264,16 +256,21 @@ class ThreadClass(QtCore.QThread):
 		self.indiclient.sendNewNumber(self.slot_dwheel)
 
 	#Turn cooler on
-	def cooler_on(self):
-		self.cool_dcamera[0].s = PyIndi.ISS_ON
-		self.cool_dcamera[1].s = PyIndi.ISS_OFF
+	def cooler_toggle(self,on):
+		if on == True:
+			self.cool_dcamera[0].s = PyIndi.ISS_ON
+			self.cool_dcamera[1].s = PyIndi.ISS_OFF
+		else: 
+			self.cool_dcamera[0].s = PyIndi.ISS_OFF
+			self.cool_dcamera[1].s = PyIndi.ISS_ON	
 		self.indiclient.sendNewSwitch(self.cool_dcamera)
 
-	#Turn cooler off
-	def cooler_off(self):
-		self.cool_dcamera[0].s = PyIndi.ISS_OFF
-		self.cool_dcamera[1].s = PyIndi.ISS_ON
-		self.indiclient.sendNewSwitch(self.cool_dcamera)
+	def cooler_status(self):
+		if self.cool_dcamera[0].s == PyIndi.ISS_ON:
+			on = True
+		elif self.cool_dcamera[1].s == PyIndi.ISS_ON:
+			on = False
+		return on
 
 	#Change bandwidth
 	def update_band(self,band):
@@ -282,7 +279,6 @@ class ThreadClass(QtCore.QThread):
 
 	#Change x binning
 	def update_xbin(self,xbin):
-		#print("New bin:"+str(xbin))
 		self.binning_dcamera[0].value = xbin
 		self.indiclient.sendNewNumber(self.controls_dcamera)
 
@@ -302,13 +298,14 @@ class ThreadClass(QtCore.QThread):
 		self.indiclient.sendNewNumber(self.controls_dcamera)
 
 	#Set bit/pixel
-	def bit_eight(self):
-		self.bit_dcamera[0].s = PyIndi.ISS_ON
-		self.bit_dcamera[1].s = PyIndi.ISS_OFF
-		
-	def bit_sixteen(self):
-		self.bit_dcamera[0].s = PyIndi.ISS_OFF
-		self.bit_dcamera[1].s = PyIndi.ISS_ON
+	def bit(self,pixel):
+		if pixel == 8:
+			self.bit_dcamera[1].s = PyIndi.ISS_OFF
+			self.bit_dcamera[0].s = PyIndi.ISS_ON
+		elif pixel == 16:
+			self.bit_dcamera[1].s = PyIndi.ISS_ON
+			self.bit_dcamera[0].s = PyIndi.ISS_OFF
+		self.indiclient.sendNewSwitch(self.bit_dcamera)
 
 	#Set frametype --- (could have also passed a value)
 	def frametype_light(self):
@@ -325,14 +322,12 @@ class ThreadClass(QtCore.QThread):
 		self.frametype_dcamera[3].s = PyIndi.ISS_OFF
 		self.indiclient.sendNewSwitch(self.frametype_dcamera)
 
-
 	def frametype_dark(self):
 		self.frametype_dcamera[0].s = PyIndi.ISS_OFF
 		self.frametype_dcamera[1].s = PyIndi.ISS_OFF
 		self.frametype_dcamera[2].s = PyIndi.ISS_ON
 		self.frametype_dcamera[3].s = PyIndi.ISS_OFF
 		self.indiclient.sendNewSwitch(self.frametype_dcamera)
-
 
 	def frametype_flat(self):
 		self.frametype_dcamera[0].s = PyIndi.ISS_OFF
@@ -360,10 +355,6 @@ class ThreadClass(QtCore.QThread):
 
 	#Change temperature
 	def change_temp(self,temp):
-		if(self.cool_dcamera[0].s == PyIndi.ISS_OFF):
-			self.cool_dcamera[0].s = PyIndi.ISS_ON
-			self.indiclient.sendNewSwitch(self.cool_dcamera)
-			self.sig1.emit(cool = 0)
 		self.temp_dcamera[0].value = temp
 		self.indiclient.sendNewNumber(self.temp_dcamera)
 
@@ -458,5 +449,6 @@ class ThreadClass(QtCore.QThread):
 			self.sig7.emit(start)
 
 	def stop(self):
+		#self.cooler_off()
 		self.terminate()
 
