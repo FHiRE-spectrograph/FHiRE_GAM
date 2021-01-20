@@ -22,12 +22,12 @@ __fhireGUI10.py:__ Provides PyQt5 interface layout and definitions created using
 __filterclient.py:__ Setup IndiClient loop for device communications with QHY filter wheel and the ZWO guide camera.  
 
 ## Not included in GitHub:  
-###Qt Designer layouts:
+### Qt Designer layouts:
 __fhireGUI11.py:__ New layout for GAM GUI. Includes options to open new windows for monitoring, testing and settings. Doesn't include empty space for ds9. PyQt5.   
 __zwocamerawindow.py:__  Layout for ZWO camera settings window. Inherited by ZWOguiding_camera.py.  
 __vacuumwindow.py:__ Layout for vacuum control window. Inherited by VacuumControl.py.  
 __adcwindow.py:__ Layout for the ADC window. Inherited by ADCtesting.py.  
-###External files:
+### External files:
 __Telinfo:__ Telescope information file copied from Claudius.  
 
 ## Need to:
