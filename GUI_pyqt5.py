@@ -11,10 +11,12 @@ from PyQt5.QtCore import QThread,pyqtSignal
 
 import fhireGUI11 #imports PyQt design
 import client #imports basic indiclient loop
-import GUI_windows as windows
+
+import ADCtesting as adc
+import VacuumControl as vacuum
 import ZWOguiding_camera as zwo
 
-import sys,os,io,time,threading,PyIndi,struct
+import sys,os,io,time,threading,PyIndi,struct,subprocess
 import numpy as np 
 
 import easydriver as ed #imports GPIO stuff for focuser
@@ -28,7 +30,7 @@ from ReadRegions import read_region
 #=======================================================================================#
 #=======================================================================================#
 #Run IndiServer
-#indiserver = subprocess.Popen(["x-terminal-emulator","-e","indiserver -v indi_qhycfw2_wheel indi_asi_ccd"])
+indiserver = subprocess.Popen(["x-terminal-emulator","-e","indiserver -v indi_qhycfw2_wheel indi_asi_ccd"])
 
 #os.system('ds9 -geometry 636x360+447+87 &') #set up ds9 window
 
@@ -44,9 +46,7 @@ class EmittingStream(QtCore.QObject):
 cw = False
 ccw = True
 
-stepper = ed.easydriver(12, 0.004, 32, 18, 11, 22, 33, 35, 0, 'stepper')
-stepper2 = ed.easydriver(13, 0.004, 32, 18, 11, 22, 37, 36, 0, 'stepper2')
-stepper3 = ed.easydriver(16, 0.004, 32, 18, 11, 22, 38, 40, 0, 'stepper3')
+stepper = ed.easydriver(12, 0.004, 32, 18, 11, 22, 0, 0, 0, 'stepper') #focus
 
 class motor_loop1(QtCore.QObject):
 	sig1 = pyqtSignal('PyQt_PyObject')
@@ -96,12 +96,6 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.num_exp = self.num_exp_spn.value()
 		self.offset_complete = False
 
-		#self.setStyle(QtWidgets.QStyleFactory.create('GTK+'))
-
-		self.vacuumwindow = windows.VacuumWindow()
-		self.adcwindow = windows.ADCTestingWindow()
-		self.camerawindow = zwo.ZWOCameraWindow()
-
 		#Set up files:
 		self.regionpath = '/home/fhire/Desktop/GUI/Reference/regions.reg'
 		self.logfile = open('/home/fhire/Desktop/GUI/Reference/Log.txt', 'w') 
@@ -115,17 +109,24 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.threadclass = client.ThreadClass(self) #Client thread
 		self.threadclass.start()
 
+		self.adcthread = adc.ADCThread(self)
+		self.adcthread.start()
+
 		self.filterthread_startup = FilterThread_Startup(self.threadclass) #Filter indicator thread
 		self.filterthread_startup.start()
 
-		self.refractorthread = Refractor()
-		self.refractorthread.start()
+		#self.refractorthread = Refractor()
+		#self.refractorthread.start()
 
-		self.tempthread = windows.TempThread(self.threadclass)
+		self.tempthread = zwo.TempThread(self.threadclass)
 		self.tempthread.start()
 
-		self.configthread = windows.ConfigThread(self.threadclass)
+		self.configthread = zwo.ConfigThread(self.threadclass)
 		self.configthread.start()
+
+		self.vacuumwindow = vacuum.VacuumWindow()
+		self.adcwindow = adc.ADCTestingWindow(self)
+		self.camerawindow = zwo.ZWOCameraWindow(self)
 
 		#Stage move/watch threads: -- [Stage not available]
 		#self.moveStageThread = stage_thread()
@@ -183,6 +184,9 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 
 		self.tempthread.signal.connect(self.camerawindow.updateTemp)
 		self.configthread.signal.connect(self.camerawindow.updateConfig)
+
+		self.adcthread.sig1.connect(self.adcwindow.adc_top)
+		self.adcthread.sig2.connect(self.adcwindow.adc_bot)
 
 #=================================================
 # Define widgets + connect to functionalities ====
@@ -539,7 +543,8 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 			self.threadclass.stop()
 			self.filterthread_startup.stop()
 			#self.moveStageThread.stop()
-			self.refractorthread.stop()	
+			#self.refractorthread.stop()
+			self.adcthread.stop()	
 		
 			#print(indiserver.poll())
 			#indiserver.terminate() #Doesn't work :|
