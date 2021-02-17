@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1036</width>
+    <height>356</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>FHiRE Vacuum Controller</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="2">
+     <widget class="QGroupBox" name="turboBox">
+      <property name="minimumSize">
+       <size>
+        <width>250</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>Turbo Pump</string>
+      </property>
+      <widget class="QPushButton" name="turbo_switch">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>30</y>
+         <width>99</width>
+         <height>27</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QPushButton" name="pump_button_off">
+      <property name="text">
+       <string>Backing Pump Off</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QPushButton" name="pump_button_on">
+      <property name="text">
+       <string>Backing Pump On</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="3">
+     <widget class="QPushButton" name="ion_button_on">
+      <property name="text">
+       <string>Ion Pump On</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="3">
+     <widget class="QPushButton" name="ion_button_off">
+      <property name="text">
+       <string>Ion Pump Off</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="2">
+     <widget class="QPushButton" name="turbo_button_off">
+      <property name="text">
+       <string>Turbo Pump Off</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QPushButton" name="pump_down">
+      <property name="text">
+       <string>Pump Down</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QGroupBox" name="backingBox">
+      <property name="minimumSize">
+       <size>
+        <width>250</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>Backing Pump</string>
+      </property>
+      <widget class="QPushButton" name="backing_switch">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>30</y>
+         <width>99</width>
+         <height>27</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </widget>
+    </item>
+    <item row="4" column="2">
+     <widget class="QPushButton" name="abort_pump_down">
+      <property name="text">
+       <string>Abort Pump Down</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="3" rowspan="2">
+     <widget class="QGroupBox" name="tic_pressure_box">
+      <property name="title">
+       <string>TIC Gauge Pressure:</string>
+      </property>
+      <widget class="QLineEdit" name="tic_pressureText">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>30</y>
+         <width>251</width>
+         <height>27</height>
+        </rect>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </widget>
+    </item>
+    <item row="7" column="2">
+     <widget class="QPushButton" name="stop_plot">
+      <property name="text">
+       <string>Stop AutoPlotting</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="3">
+     <widget class="QPushButton" name="vent">
+      <property name="text">
+       <string>Vent</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="1">
+     <widget class="QPushButton" name="gauge_button">
+      <property name="text">
+       <string>Read Gauge</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="1">
+     <widget class="QPushButton" name="auto_plot">
+      <property name="text">
+       <string>Auto Plot</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="2">
+     <widget class="QPushButton" name="graph">
+      <property name="text">
+       <string>Manual Graph</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="4">
+     <widget class="QGroupBox" name="negBox">
+      <property name="minimumSize">
+       <size>
+        <width>250</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>NEG Pump</string>
+      </property>
+      <widget class="QPushButton" name="neg_switch">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>30</y>
+         <width>99</width>
+         <height>27</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </widget>
+    </item>
+    <item row="3" column="4">
+     <widget class="QPushButton" name="neg_button_off">
+      <property name="text">
+       <string>Neg Pump Off</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="4">
+     <widget class="QPushButton" name="neg_button_on">
+      <property name="text">
+       <string>Neg Pump On</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3">
+     <widget class="QGroupBox" name="ionBox">
+      <property name="minimumSize">
+       <size>
+        <width>250</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>Ion Pump</string>
+      </property>
+      <widget class="QPushButton" name="ion_switch">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>30</y>
+         <width>99</width>
+         <height>27</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </widget>
+    </item>
+    <item row="2" column="2">
+     <widget class="QPushButton" name="turbo_button_on">
+      <property name="text">
+       <string>Turbo Pump On</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="4" rowspan="2">
+     <widget class="QGroupBox" name="ion_pressure_box">
+      <property name="title">
+       <string>Ion Pump Pressure:</string>
+      </property>
+      <widget class="QLineEdit" name="ion_pressureText">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>30</y>
+         <width>251</width>
+         <height>27</height>
+        </rect>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </widget>
+    </item>
+    <item row="8" column="1" colspan="4">
+     <widget class="QTextEdit" name="textEdit">
+      <property name="minimumSize">
+       <size>
+        <width>120</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>2000</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1036</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuOptions">
+    <property name="title">
+     <string>Options</string>
+    </property>
+    <addaction name="actionImport"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <addaction name="menuOptions"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionImport">
+   <property name="text">
+    <string>Import Pressure Log</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
