@@ -1,0 +1,84 @@
+# Store important parameters for GAM devices.
+# 
+# Indexes in the GAM code are hard coded to the 
+# current row setup, so be careful changing the 
+# order of the setup below. If adding new settings,
+# append to the end.
+#
+# Filter	Name	
+Filter-1	>ND 1.8
+Filter-2	>ND 3.0
+Filter-3	>V Filter
+Filter-4	>Random
+Filter-5	>Empty
+Filter-6	>Test
+
+# Focuser	Position
+Focuser		>0
+
+# Frametype: 0=Light, 1=Bias, 2=Dark, 3=Flat
+# 
+# ZWO setting1	Value
+1Binning-x	>1
+1Binning-y	>1
+1Gain		>200
+1Offset		>1
+1Bandwidth	>40
+1Bit		>8
+1Frametype	>0
+1Framesize-x	>1936
+1Framesize-y	>1216
+1Framesize-top	>0
+1Framesize-left	>0
+
+# ZWO setting2	Value
+2Binning-x	>2
+2Binning-y	>2
+2Gain		>20
+2Offset		>4
+2Bandwidth	>40
+2Bit		>17
+2Frametype	>3
+2Framesize-x	>1936
+2Framesize-y	>1216
+2Framesize-top	>0
+2Framesize-left	>0
+
+# ZWO setting3	Value
+3Binning-x	>1
+3Binning-y	>1
+3Gain		>200
+3Offset		>1
+3Bandwidth	>40
+3Bit		>8
+3Frametype	>2
+3Framesize-x	>1936
+3Framesize-y	>1216
+3Framesize-top	>0
+3Framesize-left	>0
+
+# ZWO setting4	Value
+4Binning-x	>1
+4Binning-y	>1
+4Gain		>200
+4Offset		>1
+4Bandwidth	>40
+4Bit		>8
+4Frametype	>Light
+4Framesize-x	>1936
+4Framesize-y	>1216
+4Framesize-top	>0
+4Framesize-left	>0
+
+# ZWO setting5	Value
+5Binning-x	>1
+5Binning-y	>1
+5Gain		>200
+5Offset		>1
+5Bandwidth	>40
+5Bit		>8
+5Frametype	>0
+5Framesize-x	>1936
+5Framesize-y	>1216
+5Framesize-top	>0
+5Framesize-left	>0
