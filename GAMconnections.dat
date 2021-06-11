@@ -1,0 +1,7 @@
+# Saves connection status of GAM devices. 0=disconnected, 1=connected
+# Device	Status
+Filter-wheel	>1
+ZWO-camera	>1
+Stage		>1
+ADC		>1
+Refractor	>1
