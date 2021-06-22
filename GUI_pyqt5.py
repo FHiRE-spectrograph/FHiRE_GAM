@@ -30,13 +30,16 @@ import threading
 import easydriver as ed  
 
 # Imports driver for stage. ***Disable when stage is disconnected. ***
-import LTS300_1 as stage  
+import LTS300 as stage  
 
 # Autoguiding.
 from pexpect import pxssh 
 #from pyraf import iraf 
 from Centroid_DS9 import imexcentroid
 from ReadRegions import read_region 
+
+#Cloud Monitor
+from CloudMonitor import Clouds
 
 # xpaset os commands to communicate with DS9. http://ds9.si.edu/doc/ref/xpa.html
 #====================================================================================#
@@ -184,14 +187,21 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.client_thread.start()
 
 		# ADC thread
-		#self.adc_thread = QtCore.QThread()
-		#self.adc_motor = adc.ADCThread()
-		#self.adc_motor.moveToThread(self.adc_thread)
-		#self.adc_thread.started.connect(self.adc_motor.run)
-		#self.adcwindow = adc.ADCTestingWindow(self)
-		#self.adc_motor.sig1.connect(self.adcwindow.adc_top)
-		#self.adc_motor.sig2.connect(self.adcwindow.adc_bot)
-		#self.adc_thread.start()
+		self.adc_thread = QtCore.QThread()
+		self.adc_motor = adc.ADCThread()
+		self.adc_motor.moveToThread(self.adc_thread)
+		self.adc_thread.started.connect(self.adc_motor.run)
+		self.adcwindow = adc.ADCTestingWindow(self)
+		self.adc_motor.sig1.connect(self.adcwindow.adc_top)
+		self.adc_motor.sig2.connect(self.adcwindow.adc_bot)
+		self.adc_motor.sigPA_cur.connect(self.adcwindow.adc_PA)
+		self.adc_motor.sigRA_cur.connect(self.adcwindow.adc_RA)
+		self.adc_motor.sigPA_calc.connect(self.adcwindow.adc_PAcalc)
+		self.adc_motor.sigRA_calc.connect(self.adcwindow.adc_RA_calc)
+		self.adc_motor.sigT_calc.connect(self.adcwindow.adc_top_calc)
+		self.adc_motor.sigB_calc.connect(self.adcwindow.adc_bot_calc)
+		self.adc_motor.sig_update.connect(self.adcwindow.updates)
+		self.adc_thread.start()
 
 		# Vacuum thread
 		#self.vacuum_thread = QtCore.QThread()
@@ -273,7 +283,17 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 
 		#self.TCS_btn_2.setStyleSheet("outline: none;")
 		self.TCS_btn.setStyleSheet("outline: none;")
-		self.brightness_btn.setStyleSheet("outline: none;")
+		
+		#Cloud Monitor Setup stuff
+		self.clouds = Clouds()
+		self.brightness_btn.setStyleSheet("QPushButton:unchecked{outline: none}")
+		self.brightness_btn.pressed.connect(self.CloudMonitorDialog)
+		self.brightness_btn.setToolTip("Activates the cloud monitoring system\nMust have refractor cover open")		
+		self.clouds.sig1.connect(self.CMPop1)
+		self.clouds.sig2.connect(self.CMPop2)
+		self.clouds.sig3.connect(self.CMPop3)
+		self.clouds.sig4.connect(self.bbstyle)
+		
 		self.guiding_btn.setStyleSheet("outline: none;")
 
 		# Send command to Claudius.
@@ -430,8 +450,58 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		preset_dict = [7, 18, 29, 40, 51]
 		
 #==================================
+# Methods for Cloud Cover Monitoring
+#==================================
+	
+	def CloudMonitorDialog(self):
+		reply = QtWidgets.QMessageBox.question(self,
+					'Cloud Cover Startup',
+					'Is the refractor cover open?',
+					QtWidgets.QMessageBox.Yes|
+						QtWidgets.QMessageBox.No, 
+					QtWidgets.QMessageBox.No)
+		if reply == QtWidgets.QMessageBox.Yes:
+			self.brightness_btn.setStyleSheet("background-color: #95fef9; \
+						   outline: none;")
+			self.CloudMonitorThread()
+		else:
+			pass
+			
+	def CloudMonitorThread(self):
+		self.CMThread = threading.Thread(target=self.CloudMonitor)
+		self.CMThread.setDaemon(True)
+		self.CMThread.start()
+		
+	def CMPop1(self):
+		cld_msg = QtWidgets.QMessageBox()
+		cld_msg.setWindowTitle("Cloud Monitor Starting")
+		cld_msg.setText("BASELINE FOR COUNTS TAKEN\nREMINDER: CHECK FOR CLOUDS")
+		x = cld_msg.exec_()
+		
+	def CMPop2(self):
+		cld_msg = QtWidgets.QMessageBox()
+		cld_msg.setWindowTitle("Cloud Monitor Warning")
+		cld_msg.setText("WARNING: POSSIBLE CLOUDS DETECTED")
+		x = cld_msg.exec_()
+	
+	def CMPop3(self):
+		cld_msg = QtWidgets.QMessageBox()
+		cld_msg.setWindowTitle("Cloud Monitor Iteration End")
+		cld_msg.setText("WARNING: CLOUD MONITOR ITERATION HAS ENDED\nPLEASE RESTART CLOUD MONITOR")
+		x = cld_msg.exec_()
+		
+	def bbstyle(self):
+		self.brightness_btn.setStyleSheet("background-color: lightgrey; \
+						   outline: none;")
+		
+	def CloudMonitor(self):
+		self.clouds.Monitor()
+		print('CMEnd')
+		
+#==================================
 # Methods to update widgets =======
 #==================================	
+	
 	def take_exposure(self):
 		# Set current exposure number to 0.
 		self.update_i()
