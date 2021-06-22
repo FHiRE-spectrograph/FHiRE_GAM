@@ -65,6 +65,14 @@ class ADCTestingWindow(QtWidgets.QMainWindow, adcwindow.Ui_ADC):
 		self.pb_adcHome.setStyleSheet("background-color: #95fef9; \
 					       outline: none")
 
+		self.set_btn_2.pressed.connect(self.set_2)
+		self.set_btn_2.setStyleSheet("background-color: #95fef9; \
+					       outline: none")
+		
+		self.set_btn.pressed.connect(self.set_1)
+		self.set_btn_2.setStyleSheet("background-color: #95fef9; \
+					       outline: none")
+
 		#self.afocus1_lineEdit.returnPressed.connect(
 		#		lambda:self.main.adc_motor.move_top(
 		#			self.afocus1_lineEdit.text()))
@@ -76,6 +84,33 @@ class ADCTestingWindow(QtWidgets.QMainWindow, adcwindow.Ui_ADC):
 		#		self.main.adc_motor.calc_steps_top)
 		#self.afocus2_btn_sub.pressed.connect(
 		#		self.main.adc_motor.calc_steps_bottom)
+		
+	def set_2(self):
+		top = self.top_inp.text()
+		top = int(top)
+		bottom = self.btm_inp.text()
+		bottom = int(bottom)
+		self.main.adc_motor.move_top(top)
+		self.main.adc_motor.move_steps_top()
+		self.main.adc_motor.move_bottom(bottom)
+		self.main.adc_motor.move_steps_bottom()
+		
+	def set_1(self):
+		par_angle = int(self.PA_inp.text())
+		Phi = int(self.RA_inp.text())
+		parstepsfloat = par_angle / .315 
+		parstepsint = int(parstepsfloat)
+		rotstepsfloat = Phi / .315
+		rotstepsint = int(rotstepsfloat)
+		#total steps=parallactic angle + dispersion compensation angle 
+		# of rotation.
+		top_steps = parstepsint + rotstepsint
+		self.RA_current.setText(self.RA_inp.text())
+		self.PA_current.setText(self.PA_inp.text())
+		self.main.adc_motor.move_top(top_steps)
+		self.main.adc_motor.move_steps_top()
+		self.main.adc_motor.rotstepsint = rotstepsint
+		self.main.adc_motor.calc_steps_bottom()
 
 	def adc_top(self, top):
 		self.top = top
@@ -83,15 +118,46 @@ class ADCTestingWindow(QtWidgets.QMainWindow, adcwindow.Ui_ADC):
 	def adc_bot(self, bot):
 		self.bot = bot
 		self.adc_current()
-
+		
+	def adc_PA(self, PA):
+		self.PA_current.setText(str(PA))
+		
+	def adc_RA(self, RA):
+		self.RA_current.setText(str(RA))
+		
+	def adc_top_calc(self, top_calc):
+		self.top_calc.setText(str(top_calc))
+	
+	def adc_bot_calc(self,bot_calc):
+		self.btm_calc.setText(str(bot_calc))
+	
+	def adc_PAcalc(self, PA):
+		self.PA_calc.setText(str(PA))
+		
+	def adc_RA_calc(self, RA_calc):
+		self.RA_calc.setText(str(RA_calc))
+		
 	# Current ADC position in steps.
 	def adc_current(self):
 		self.top_current.setText(str(self.top))
 		self.btm_current.setText(str(self.bot))
+		
+	def updates(self):
+		self.dec_current.setText(str(self.main.adc_motor.teldec))
+		self.HA_current.setText(str(self.main.adc_motor.telhad))
+		self.pressure_current.setText(str(self.main.adc_motor.telP))
+		self.temp_current.setText(str(self.main.adc_motor.teltemp))
 
 class ADCThread(QtCore.QObject):
 	sig1 = pyqtSignal('PyQt_PyObject')
 	sig2 = pyqtSignal('PyQt_PyObject')
+	sigPA_cur = pyqtSignal('PyQt_PyObject')
+	sigRA_cur = pyqtSignal('PyQt_PyObject')
+	sigPA_calc = pyqtSignal('PyQt_PyObject')
+	sigRA_calc = pyqtSignal('PyQt_PyObject')
+	sigT_calc = pyqtSignal('PyQt_PyObject')
+	sigB_calc = pyqtSignal('PyQt_PyObject')
+	sig_update = pyqtSignal('PyQt_PyObject')
 	
 	def __init__(self, parent=None):
 		super(ADCThread, self).__init__(parent)
@@ -170,7 +236,7 @@ class ADCThread(QtCore.QObject):
 		# Converts parallactic angle into motor steps from home.
 		parstepsfloat = par_angle / .315 
 		self.parstepsint = int(parstepsfloat)
-
+		self.sigPA_calc.emit(par_angle)
 		#
 		# Calculates rotation angle to move both top and bottom prism 
 		# to account for dispersion at a given zenith angle, temperature, 
@@ -293,16 +359,18 @@ class ADCThread(QtCore.QObject):
 		#Phi = np.degrees(
 		#	np.arcsin(np.tan(np.deg2rad(self.z)) / 
 		#	np.tan(np.deg2rad(max_z))))
-
+		self.sigRA_calc.emit(Phi)
 		print("Rotation angle = %s degrees" %Phi)
 		rotstepsfloat = Phi / .315
 		self.rotstepsint = int(rotstepsfloat)
 		#total steps=parallactic angle + dispersion compensation angle 
 		# of rotation.
 		self.top_steps = self.parstepsint + self.rotstepsint
+		self.sigT_calc.emit(self.top_steps)
 		
 		print("Top Prism move: %s steps" %self.top_steps)
-		
+		self.sigRA_cur.emit(Phi)
+		self.sigPA_cur.emti(par_angle)
 		self.move_steps_top()
 		
 	def move_steps_top(self):
@@ -330,7 +398,7 @@ class ADCThread(QtCore.QObject):
 		# rotation (since already subtracted from top).
 		self.bot_steps = self.top_abs - (2 * self.rotstepsint)
 		print("Bottom Prism move: %s steps" %self.bot_steps)
-
+		self.sigB_calc.emit(self.bot_steps)
 		self.move_steps_bottom()
 
 	def move_top(self, steps):
@@ -407,6 +475,7 @@ class ADCThread(QtCore.QObject):
 		print("z: %s" %self.z)
 		
 		fileopen.close()
+		self.sig_update.emit(1)
 		
 	def ADC_home(self):
 		stepper3.enable()
