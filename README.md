@@ -1,10 +1,11 @@
 # FHiRE GAM software
-## Updated: 06/10/2021 
+## Updated: 06/22/2021 
 
 __GUI_pyqt5.py:__ Most up to date version of the GAM user interface. Provides communications with QHY filter wheel, ZWO ASI174MM-Cool guide camera, ThorLabs stage, camera focuser, the ADC, and CMOS camera for the refractor. Implements the autoguiding procedure and telescope communication. Mainly includes code required by the mainwindow widgets. Inherits code for seperate windows.  
 __ZWOguiding_camera.py:__ Includes options to toggle cooling, set binning, gain, bandwidth, offset, frame settings, and select exposure type (light, dark, etc.) and bits. Inherited by GUI_pyqt5.py  
 __VacuumControl.py:__ Currently empty. Need to integrate Jason's vacuum control code.  
-__ADCtesting.py:__ Includes all ADC methods - initiating x2 stepper motors and x2 microswitches, home method for absolute positioning, and methods for calculating and updating ADC positions. *Currently doesn't allow for the user to move the ADC specific number of steps.* *ADC calculations need to be tested during observation runs.* *Need to rewrite thread for accessing Claudius to retrieve Telinfo.*   
+__ADCtesting.py:__ Includes all ADC methods - initiating x2 stepper motors and x2 microswitches, home method for absolute positioning, and methods for calculating and updating ADC positions. *ADC calculations need to be tested during observation runs.* *Need to rewrite thread for accessing Claudius to retrieve Telinfo.*   
+__CloudMonitor.py:__ Communicates with the refractor telescope to monitor for potential cloud interference with the observations.  
 
 ### Devices:
 __LTS300.py:__ Driver for ThorLabs stage used to switch between OPEN, the mirror, and beam splitter. *Currently doesn't provide protocol to receive location from stage. (Relevant location code developed by Jason and needs to be integrated)*  
@@ -44,7 +45,6 @@ Guiding camera:
 
 Refractor camera:  
 []Add manual save option for the refractor camera.  
-[]Add option to use the refractor camera for monitoring cloud coverage. Pull up dialog box warning brightness has dropped below a threshold.  
 
 Focuser:  
 []Store current position of the focuser to simulate an absolute home/reference.  
@@ -59,8 +59,6 @@ Guiding:
 []Add a protocol to spiral search about a bright target to line up the optical fiber on the brightest spectra.  
 
 ADC:  
-[]Show important Telinfo stats on the ADC window.  
-[]Add capability to manually set the rotation and parallactic angle of the ADC for testing.  
 []Show nominal ADC values.  
 
 Communicating with other RPis:  
