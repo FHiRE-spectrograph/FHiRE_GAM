@@ -1,11 +1,12 @@
 # FHiRE GAM software
-## Updated: 06/22/2021 
+## Updated: 06/30/2021 
 
 __GUI_pyqt5.py:__ Most up to date version of the GAM user interface. Provides communications with QHY filter wheel, ZWO ASI174MM-Cool guide camera, ThorLabs stage, camera focuser, the ADC, and CMOS camera for the refractor. Implements the autoguiding procedure and telescope communication. Mainly includes code required by the mainwindow widgets. Inherits code for seperate windows.  
 __ZWOguiding_camera.py:__ Includes options to toggle cooling, set binning, gain, bandwidth, offset, frame settings, and select exposure type (light, dark, etc.) and bits. Inherited by GUI_pyqt5.py  
 __VacuumControl.py:__ Currently empty. Need to integrate Jason's vacuum control code.  
 __ADCtesting.py:__ Includes all ADC methods - initiating x2 stepper motors and x2 microswitches, home method for absolute positioning, and methods for calculating and updating ADC positions. *ADC calculations need to be tested during observation runs.* *Need to rewrite thread for accessing Claudius to retrieve Telinfo.*   
 __CloudMonitor.py:__ Communicates with the refractor telescope to monitor for potential cloud interference with the observations.  
+__DataGetter.py:__ Class that communicates with the other RPi's using pxssh to retrieve the log files for temperature, pressure, and eventually, brightness.   
 
 ### Devices:
 __LTS300.py:__ Driver for ThorLabs stage used to switch between OPEN, the mirror, and beam splitter. *Currently doesn't provide protocol to receive location from stage. (Relevant location code developed by Jason and needs to be integrated)*  
