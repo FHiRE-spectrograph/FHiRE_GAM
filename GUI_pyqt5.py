@@ -1,7 +1,7 @@
 #====================================================================================#
 # ------------------------------ FHiRE GUI code ------------------------------------
 # ----------(GAM: Filterwheel, Guide Camera, Camera focuser, ADC focusers) ---------
-# --------------------------- Version: 05/17/2021 ----------------------------------
+# --------------------------- Version: 06/30/2021 ----------------------------------
 #====================================================================================#
 #====================================================================================#
 # -------------------------------- Imports: ----------------------------------------
@@ -40,6 +40,9 @@ from ReadRegions import read_region
 
 #Cloud Monitor
 from CloudMonitor import Clouds
+
+#Data Getter from other RPi's
+from DataGetter import DataGetter
 
 # xpaset os commands to communicate with DS9. http://ds9.si.edu/doc/ref/xpa.html
 #====================================================================================#
@@ -212,11 +215,11 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		#self.vacuum_thread.start()
 
 		# Refractor camera thread
-		#self.refractor_thread = QtCore.QThread()
-		#self.refractor = Refractor()
-		#self.refractor.moveToThread(self.refractor_thread)
-		#self.refractor_thread.started.connect(self.refractor.run)
-		#self.refractor_thread.start()
+		self.refractor_thread = QtCore.QThread()
+		self.refractor = Refractor()
+		self.refractor.moveToThread(self.refractor_thread)
+		self.refractor_thread.started.connect(self.refractor.run)
+		self.refractor_thread.start()
 
 		# Claudius (terminal) thread
 		#self.claudius_thread = QtCore.QThread()
@@ -232,6 +235,12 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		#self.focus_motor.moveToThread(self.focus_thread)
 		#self.focus_motor.sig1.connect(self.cfocus_count_add)	
 		#self.focus_motor.sig2.connect(self.cfocus_count_sub)	
+		
+		# Thread to get .dat files from the other RPi's
+		#self.data_thread = threading.Thread(target=self.get_data)
+		#self.data_getter = DataGetter()
+		#self.data_thread.setDaemon(True)
+		#self.data_thread.start()		
 
 		# Terminal thread 
 		self.terminal_thread = QtCore.QThread()
@@ -295,6 +304,7 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.clouds.sig4.connect(self.bbstyle)
 		
 		self.guiding_btn.setStyleSheet("outline: none;")
+
 
 		# Send command to Claudius.
 		self.claudius_command_lineEdit.returnPressed.connect(
@@ -371,6 +381,15 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.ref_exp_btn.pressed.connect(self.refractorExposure)
 		self.ref_exp_btn.pressed.connect(lambda: self.getExp('refractor camera'))
 		self.ref_exp_btn.setToolTip("Refractor images saved to ~/Desktop")
+		#Default file path for refractor
+		self.ref_file_path = "/home/fhire/Desktop"
+		self.ref_dir_inp.setPlaceholderText(self.ref_file_path)
+		self.ref_file_name = "RefractorImage"
+		self.ref_prefix_inp.setPlaceholderText(self.ref_file_name.split(".jpg")[0]
+						   +"XXX.jpg")
+		#Refractor Line edits - set Directory/Prefix for refractor images
+		self.save_btn.pressed.connect(self.ref_setDirectory)
+		self.save_btn.pressed.connect(self.ref_setPrefix)
 
 		# Set default for stage indicator to not connected.
 		self.stage_ind.setStyleSheet("background-color: lightgrey; \
@@ -449,9 +468,9 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		# First index of preset settings in self.settings.
 		preset_dict = [7, 18, 29, 40, 51]
 		
-#==================================
+#====================================
 # Methods for Cloud Cover Monitoring
-#==================================
+#====================================
 	
 	def CloudMonitorDialog(self):
 		reply = QtWidgets.QMessageBox.question(self,
@@ -487,7 +506,7 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 	def CMPop3(self):
 		cld_msg = QtWidgets.QMessageBox()
 		cld_msg.setWindowTitle("Cloud Monitor Iteration End")
-		cld_msg.setText("WARNING: CLOUD MONITOR ITERATION HAS ENDED\nPLEASE RESTART CLOUD MONITOR")
+		cld_msg.setText("WARNING: CLOUD MONITOR ITERATION HAS ENDED\nPLEASE CHECK FOR CLOUDS AND RESTART CLOUD MONITOR")
 		x = cld_msg.exec_()
 		
 	def bbstyle(self):
@@ -498,9 +517,20 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		self.clouds.Monitor()
 		print('CMEnd')
 		
+		
 #==================================
 # Methods to update widgets =======
 #==================================	
+	
+	def get_data(self):
+		while True:
+			self.data_getter.Temp()
+			time.sleep(1)
+			self.data_getter.Pressure()
+			time.sleep(1)
+			#self.data_getter.Brightness()
+			#time.sleep(1)
+			
 	
 	def take_exposure(self):
 		# Set current exposure number to 0.
@@ -679,7 +709,7 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		if camera == "guiding camera":
 			self.exp_time = self.exp_inp.text()
 		elif camera == "refractor camera":
-			self.exp_time = self.exp_inp_2.text()
+			self.exp_time = self.ref_exp_inp.text()
 		else:
 			self.exp_time = 0
 
@@ -696,6 +726,14 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 		print("Image prefix set to: %sXXX.fit" %self.file_name)
 		self.prefix_inp.setPlaceholderText(self.file_name+"XXX.fit")
 		return self.file_name
+		
+	def ref_setPrefix(self):
+		self.ref_file_name
+		self.ref_file_name = self.ref_prefix_inp.text()
+		self.ref_prefix_inp.clear()
+		print("Image prefix set to: %sXXX.jpg" %self.ref_file_name)
+		self.ref_prefix_inp.setPlaceholderText(self.ref_file_name+"XXX.jpg")
+		return self.ref_file_name
 
 	# (Add a check to make sure the directory exists. If not, prompt 
 	# user to create new one.)
@@ -710,16 +748,28 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 
 		if not os.path.exists(self.file_path):
 			print("Path doesn't exist.")
+			
+	def ref_setDirectory(self):
+		self.ref_file_path
+		self.ref_file_path = self.ref_dir_inp.text()
+		self.ref_dir_inp.clear()
+		if os.path.exists(self.ref_file_path):
+			print("Directory set to: %s" %self.ref_file_path)
+			self.dir_inp.setPlaceholderText(self.ref_file_path)
+			return self.ref_file_path
+
+		if not os.path.exists(self.ref_file_path):
+			print("Path doesn't exist.")
 
 	# Reopen a ds9 window if accidentally closed.
 	def reopenDS9(self):
-		os.system('ds9 -geometry 636x360+447+87 &')
+		os.system('ds9 -geometry 636x360+447+87 &') 
 
 	def refractorExposure(self):
-		self.refractorthread.signal.emit([
-					float(self.exp_inp_2.text()),
-					str(self.file_path),
-					str(self.file_name)])
+		self.refractor.signal.emit([
+					float(self.ref_exp_inp.text()),
+					str(self.ref_file_path),
+					str(self.ref_file_name)])
 
 	# Display modes for stage indicator.
 	def stageIndicator(self, position):
@@ -849,7 +899,6 @@ class MainUiClass(QtWidgets.QMainWindow, fhireGUI11.Ui_MainWindow):
 			event.ignore()
 
 
-
 #=====================================================================================#
 #=====================================================================================#
 
@@ -914,7 +963,7 @@ class Refractor(QtCore.QObject):
 		time.sleep(5)
 		start = time.time()
 		self.lnk = pxssh.pxssh()
-		hostname = '10.212.212.46'
+		hostname = '10.214.214.115'
 		username = 'fhire'
 		password = 'WIROfhire17'
 		self.lnk.login(hostname, username, password)
@@ -923,21 +972,23 @@ class Refractor(QtCore.QObject):
 		      "elapsed: %.2f seconds" %(end - start))
 
 		self.signal.connect(self.take_exposure)
+		GUI.ref_ind.setStyleSheet("background-color: rgb(0,255,0); \
+					     border: grey;")
 
 	def take_exposure(self, data):
-		exp = data[0]; #fpath = data[1]; fname = data[2]
-		fpath = "/home/fhire/Desktop/"
-		fname = "RefractorImage_temp"
+		exp = data[0]; fpath = data[1]; fname = data[2]
+		#fpath = "/home/fhire/Desktop/"
+		#fname = "RefractorImage_temp"
 		ms = exp * 1000000  # time in microSec
 		sleep = exp + 2
 
-		self.lnk.sendline(self.lnk.sendline("raspistill -ISO 900 -ss %s "
-					"-br 80 -co 100 -o %s.jpg" %(ms, fname)))
+		self.lnk.sendline("raspistill -ISO 900 -ss %s "
+					"-br 80 -co 100 -o %s.jpg" %(ms, fname))
 		print("Taking image")
 		time.sleep(sleep)
 		print("Image taken")
-		self.lnk.sendline("scp %s.jpg fhire@10.212.212.80:%s" %(fname, fpath))
-		i = self.lnk.expect("fhire@10.212.212.80\'s password:")
+		self.lnk.sendline("scp %s.jpg fhire@10.212.212.20:%s" %(fname, fpath))
+		i = self.lnk.expect("fhire@10.212.212.20\'s password:")
 		if i == 0:
 			print("Receiving image")
 			self.lnk.sendline("WIROfhire17")
